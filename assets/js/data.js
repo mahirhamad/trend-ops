@@ -1,5 +1,5 @@
 // data.js - قاعدة بيانات الخدمات لشركة Trend Travel
-// تم التوليد وتحديث البيانات من لوحة التحكم: ٨‏/١١‏/٢٠٢٦، ٥:١٤:٣٣ م
+// تم التوليد وتحديث البيانات من لوحة التحكم: ٩‏/١١‏/٢٠٢٦، ١٢:١٤:٢٦ ص
 
 const DEFAULT_TRAVEL_DATA = {
   "company": {
@@ -248,7 +248,7 @@ const DEFAULT_TRAVEL_DATA = {
           "isCover": true
         }
       ],
-      "featured": true,
+      "featured": false,
       "tags": [
         "عشاء بوفيه مفتوح",
         "عروض فلكلورية",
@@ -270,7 +270,7 @@ const DEFAULT_TRAVEL_DATA = {
       ],
       "bookingTypes": [
         {
-          "id": "type-1-1794135311763",
+          "id": "type-1-1794171571408",
           "name": "سفينة سهر الليالي",
           "price": 25,
           "oldPrice": null,
@@ -278,7 +278,7 @@ const DEFAULT_TRAVEL_DATA = {
           "desc": "شامل المواصلات, الدخولية, العشاء, كولا, مياه"
         },
         {
-          "id": "type-2-1794135311763",
+          "id": "type-2-1794171571408",
           "name": "سفينة لؤلؤة البوسفور",
           "price": 25,
           "oldPrice": null,
@@ -286,7 +286,7 @@ const DEFAULT_TRAVEL_DATA = {
           "desc": "شامل المواصلات, الدخولية, العشاء, كولا, مياه"
         },
         {
-          "id": "type-3-1794135311763",
+          "id": "type-3-1794171571408",
           "name": "سفينة ليالي شامية",
           "price": 50,
           "oldPrice": null,
@@ -369,7 +369,7 @@ const DEFAULT_TRAVEL_DATA = {
           "isCover": true
         }
       ],
-      "featured": true,
+      "featured": false,
       "tags": [
         "مرسيدس فيتو VIP",
         "سائق خاص",
@@ -399,16 +399,31 @@ const DEFAULT_TRAVEL_DATA = {
       "oldPrice": 220,
       "priceUnit": "للسيارة (حتى 7 أشخاص)",
       "duration": "12 ساعة",
-      "image": "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=800&q=80",
-      "mediaType": "image",
+      "image": "https://raw.githubusercontent.com/mahirhamad/trend-ops/main/assets/media/cloud-private-sapanca-vip-1794172461776-1.mp4",
+      "mediaType": "video",
       "gallery": [
         {
-          "url": "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=800&q=80",
-          "type": "image",
+          "url": "https://raw.githubusercontent.com/mahirhamad/trend-ops/main/assets/media/cloud-private-sapanca-vip-1794172461776-1.mp4",
+          "type": "video",
           "isCover": true
+        },
+        {
+          "url": "https://raw.githubusercontent.com/mahirhamad/trend-ops/main/assets/media/cloud-private-sapanca-vip-1794172461776-2.webp",
+          "type": "image",
+          "isCover": false
+        },
+        {
+          "url": "https://raw.githubusercontent.com/mahirhamad/trend-ops/main/assets/media/cloud-private-sapanca-vip-1794172461776-3.webp",
+          "type": "image",
+          "isCover": false
+        },
+        {
+          "url": "https://raw.githubusercontent.com/mahirhamad/trend-ops/main/assets/media/cloud-private-sapanca-vip-1794172461776-4.mp4",
+          "type": "video",
+          "isCover": false
         }
       ],
-      "featured": true,
+      "featured": false,
       "tags": [
         "عائلات VIP",
         "خصوصية تامة",
@@ -671,7 +686,7 @@ const DEFAULT_TRAVEL_DATA = {
       "desc": "أسطول حديث من سيارات المرسيدس واليخوت المجهزة بأعلى رفاهية"
     }
   ],
-  "_updatedAt": 1794147267880
+  "_updatedAt": 1794172461776
 };
 
 // Storage Key & IndexedDB Configuration (يتحدث تلقائياً مع كل تصدير لتحديث الكاش لجميع الزوار فوراً)
@@ -682,7 +697,6 @@ const IDB_STORE = 'travel_data_store';
 
 window.__TREND_TRAVEL_CACHE__ = window.__TREND_TRAVEL_CACHE__ || null;
 
-// Clean up outdated storage keys so they never consume the 5MB localStorage quota
 function cleanupOldStorageKeys() {
   try {
     const keysToRemove = [];
@@ -697,7 +711,6 @@ function cleanupOldStorageKeys() {
 }
 cleanupOldStorageKeys();
 
-// Ensure every service's cover image (s.image) matches its gallery cover item
 function normalizeServicesMedia(data) {
   if (!data || !Array.isArray(data.services)) return data;
   data.services.forEach(s => {
@@ -819,14 +832,12 @@ async function hydrateTravelDataFromIndexedDB() {
       window.dispatchEvent(new CustomEvent('travelDataReady', { detail: travelData }));
     }
 
-    // Fetch live cloud data so all phones/devices always get the latest published updates
     const cloudData = await fetchLiveCloudData();
     if (cloudData && cloudData.services && cloudData.company) {
       normalizeServicesMedia(cloudData);
       const cloudTime = cloudData._updatedAt || 0;
       const localTime = (localData && localData._updatedAt) || 0;
 
-      // Visitors always get the latest cloud data; Admin gets cloud data if it is newer than local edits
       if (!localData || !isAdminPage || cloudTime >= localTime) {
         window.__TREND_TRAVEL_CACHE__ = cloudData;
         travelData = cloudData;
@@ -895,7 +906,6 @@ function saveTravelData(data) {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(cleanData));
     } catch (quotaErr) {
-      // Never overwrite localStorage with stripped/old images; let IndexedDB serve full media
       try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
     }
     try {

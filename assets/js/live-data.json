@@ -245,7 +245,7 @@
           "isCover": true
         }
       ],
-      "featured": true,
+      "featured": false,
       "tags": [
         "عشاء بوفيه مفتوح",
         "عروض فلكلورية",
@@ -267,7 +267,7 @@
       ],
       "bookingTypes": [
         {
-          "id": "type-1-1794135311763",
+          "id": "type-1-1794171571408",
           "name": "سفينة سهر الليالي",
           "price": 25,
           "oldPrice": null,
@@ -275,7 +275,7 @@
           "desc": "شامل المواصلات, الدخولية, العشاء, كولا, مياه"
         },
         {
-          "id": "type-2-1794135311763",
+          "id": "type-2-1794171571408",
           "name": "سفينة لؤلؤة البوسفور",
           "price": 25,
           "oldPrice": null,
@@ -283,7 +283,7 @@
           "desc": "شامل المواصلات, الدخولية, العشاء, كولا, مياه"
         },
         {
-          "id": "type-3-1794135311763",
+          "id": "type-3-1794171571408",
           "name": "سفينة ليالي شامية",
           "price": 50,
           "oldPrice": null,
@@ -366,7 +366,7 @@
           "isCover": true
         }
       ],
-      "featured": true,
+      "featured": false,
       "tags": [
         "مرسيدس فيتو VIP",
         "سائق خاص",
@@ -396,16 +396,31 @@
       "oldPrice": 220,
       "priceUnit": "للسيارة (حتى 7 أشخاص)",
       "duration": "12 ساعة",
-      "image": "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=800&q=80",
-      "mediaType": "image",
+      "image": "https://raw.githubusercontent.com/mahirhamad/trend-ops/main/assets/media/cloud-private-sapanca-vip-1794172461776-1.mp4",
+      "mediaType": "video",
       "gallery": [
         {
-          "url": "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=800&q=80",
-          "type": "image",
+          "url": "https://raw.githubusercontent.com/mahirhamad/trend-ops/main/assets/media/cloud-private-sapanca-vip-1794172461776-1.mp4",
+          "type": "video",
           "isCover": true
+        },
+        {
+          "url": "https://raw.githubusercontent.com/mahirhamad/trend-ops/main/assets/media/cloud-private-sapanca-vip-1794172461776-2.webp",
+          "type": "image",
+          "isCover": false
+        },
+        {
+          "url": "https://raw.githubusercontent.com/mahirhamad/trend-ops/main/assets/media/cloud-private-sapanca-vip-1794172461776-3.webp",
+          "type": "image",
+          "isCover": false
+        },
+        {
+          "url": "https://raw.githubusercontent.com/mahirhamad/trend-ops/main/assets/media/cloud-private-sapanca-vip-1794172461776-4.mp4",
+          "type": "video",
+          "isCover": false
         }
       ],
-      "featured": true,
+      "featured": false,
       "tags": [
         "عائلات VIP",
         "خصوصية تامة",
@@ -668,5 +683,5 @@
       "desc": "أسطول حديث من سيارات المرسيدس واليخوت المجهزة بأعلى رفاهية"
     }
   ],
-  "_updatedAt": 1794147267880
+  "_updatedAt": 1794172461776
 }
