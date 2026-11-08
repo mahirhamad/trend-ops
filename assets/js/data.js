@@ -1,5 +1,5 @@
 // data.js - قاعدة بيانات الخدمات لشركة Trend Travel
-// تم التوليد وتحديث البيانات من لوحة التحكم: ٩‏/١١‏/٢٠٢٦، ١٢:١٤:٢٦ ص
+// تم التوليد وتحديث البيانات من لوحة التحكم: ٩‏/١١‏/٢٠٢٦، ١٢:١٦:٢٩ ص
 
 const DEFAULT_TRAVEL_DATA = {
   "company": {
@@ -95,7 +95,7 @@ const DEFAULT_TRAVEL_DATA = {
           "isCover": false
         }
       ],
-      "featured": true,
+      "featured": false,
       "tags": [
         "شامل الغداء",
         "مرشد عربي",
@@ -120,7 +120,7 @@ const DEFAULT_TRAVEL_DATA = {
       ],
       "bookingTypes": [
         {
-          "id": "type-1-1794137204472",
+          "id": "type-1-1794172588649",
           "name": "حجز قياسي شامل الغداء",
           "price": 10,
           "oldPrice": 25,
@@ -300,22 +300,22 @@ const DEFAULT_TRAVEL_DATA = {
       "category": "group-tours",
       "title": "رحلة شيلا وأغفا",
       "subtitle": "هدوء شواطئ البحر الأسود وركوب القارب في نهر غوكسو الساحر",
-      "price": 28,
-      "oldPrice": 38,
+      "price": 25,
+      "oldPrice": 30,
       "priceUnit": "للشخص",
       "duration": "10 ساعات",
       "image": "assets/media/group-sile-agva-1.webp",
       "mediaType": "image",
       "gallery": [
         {
-          "url": "assets/media/group-sile-agva-0.webp",
-          "type": "image",
-          "isCover": false
-        },
-        {
           "url": "assets/media/group-sile-agva-1.webp",
           "type": "image",
           "isCover": true
+        },
+        {
+          "url": "assets/media/group-sile-agva-0.webp",
+          "type": "image",
+          "isCover": false
         },
         {
           "url": "assets/media/group-sile-agva-2.mp4",
@@ -686,7 +686,7 @@ const DEFAULT_TRAVEL_DATA = {
       "desc": "أسطول حديث من سيارات المرسيدس واليخوت المجهزة بأعلى رفاهية"
     }
   ],
-  "_updatedAt": 1794172461776
+  "_updatedAt": 1794172588684
 };
 
 // Storage Key & IndexedDB Configuration (يتحدث تلقائياً مع كل تصدير لتحديث الكاش لجميع الزوار فوراً)
