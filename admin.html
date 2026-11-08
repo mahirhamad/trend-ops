@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>لوحة التحكم الإدارية | Trend Travel Admin Dashboard</title>
+  <meta name="robots" content="noindex, nofollow" />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="assets/media/basiclogo.png" />
+
+  <!-- Google Fonts & Font Awesome 6 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <!-- Admin Stylesheet -->
+  <link rel="stylesheet" href="assets/css/admin.css" />
+</head>
+<body>
+
+  <!-- ===================================================
+       Login Security Overlay
+       =================================================== -->
+  <div class="admin-login-overlay" id="loginOverlay">
+    <div class="admin-login-box">
+      <img src="assets/media/basiclogo.png" alt="Trend Travel" class="login-brand-logo" />
+      <h2 class="login-title">لوحة تحكم Trend Travel</h2>
+      <p class="login-desc">منطقة محمية — أدخل كلمة مرور المشرف للمتابعة</p>
+
+      <form id="loginForm" onsubmit="return false;">
+        <div class="admin-form-group">
+          <input 
+            type="password" 
+            id="loginPasswordInput" 
+            class="admin-input" 
+            placeholder="أدخل كلمة المرور السرية..." 
+            required 
+            autocomplete="current-password"
+            style="text-align: center; font-size: 1.1rem; letter-spacing: 2px;"
+          />
+        </div>
+        <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:14px; font-size:0.82rem; color:#94a3b8;">
+          <input type="checkbox" id="loginRememberCookie" checked style="width:16px; height:16px; cursor:pointer; accent-color:#38bdf8;" />
+          <label for="loginRememberCookie" style="cursor:pointer;">حفظ جلسة الدخول عبر ملفات الارتباط (Cookies) لمدة 7 أيام</label>
+        </div>
+        <div id="loginErrorMsg" style="display:none; color:#f87171; font-size:0.84rem; margin-bottom:14px; font-weight:700;">
+          <i class="fa-solid fa-circle-exclamation"></i> <span id="loginErrorText">كلمة المرور غير صحيحة، يرجى المحاولة مجدداً</span>
+        </div>
+        <button type="submit" id="btnLoginSubmit" class="btn-primary-admin" style="width:100%; justify-content:center; padding:12px;">
+          <i class="fa-solid fa-shield-halved"></i>
+          <span>تسجيل الدخول الآمن</span>
+        </button>
+      </form>
+      <div style="margin-top: 16px; font-size: 0.75rem; color: #64748b; display:flex; align-items:center; justify-content:center; gap:6px;">
+        <i class="fa-solid fa-lock" style="color:#38bdf8;"></i>
+        <span>جلسة محمية بتشفير SHA-256 وحماية ضد المحاولات المتكررة</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================
+       Admin Main Layout Wrapper (Hidden until authenticated)
+       =================================================== -->
+  <div class="admin-wrapper" id="adminMainWrapper" style="display:none;">
+
+    <!-- Sidebar -->
+    <aside class="admin-sidebar" id="adminSidebar">
+      <div class="sidebar-brand">
+        <img src="assets/media/basiclogo.png" alt="Logo" class="sidebar-logo-img" />
+        <div>
+          <div class="sidebar-brand-title">Trend Travel</div>
+          <span class="sidebar-brand-badge">لوحة الإدارة الشاملة</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <span class="nav-section-title">القوائم الرئيسية</span>
+
+        <button class="admin-nav-item active" data-tab="dashboard">
+          <i class="fa-solid fa-chart-pie"></i>
+          <span>لوحة الإحصائيات</span>
+        </button>
+
+        <button class="admin-nav-item" data-tab="bookings">
+          <i class="fa-solid fa-calendar-check"></i>
+          <span>سجل الحجوزات الواردة</span>
+          <span class="nav-badge-count" id="navBookingsBadge" style="background:#22c55e;">0</span>
+        </button>
+
+        <button class="admin-nav-item" data-tab="services">
+          <i class="fa-solid fa-map-location-dot"></i>
+          <span>الخدمات والجولات</span>
+          <span class="nav-badge-count" id="navServicesBadge">0</span>
+        </button>
+
+        <button class="admin-nav-item" data-tab="categories">
+          <i class="fa-solid fa-layer-group"></i>
+          <span>التصنيفات والأقسام</span>
+        </button>
+
+        <button class="admin-nav-item" data-tab="faqs">
+          <i class="fa-solid fa-circle-question"></i>
+          <span>الأسئلة الشائعة</span>
+          <span class="nav-badge-count" id="navFaqsBadge">0</span>
+        </button>
+
+        <span class="nav-section-title" style="margin-top:14px;">الإعدادات والنظام</span>
+
+        <button class="admin-nav-item" data-tab="settings">
+          <i class="fa-solid fa-sliders"></i>
+          <span>إعدادات ومعلومات الشركة</span>
+        </button>
+
+        <button class="admin-nav-item" data-tab="backup">
+          <i class="fa-solid fa-database"></i>
+          <span>النسخ الاحتياطي والاستعادة</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button class="btn-sidebar-logout" id="btnLogout">
+          <i class="fa-solid fa-power-off"></i>
+          <span>تسجيل الخروج</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Workspace Content -->
+    <main class="admin-main">
+      
+      <!-- Top Header -->
+      <header class="admin-header">
+        <div class="header-left-actions">
+          <button class="btn-mobile-menu" id="btnMobileMenu" aria-label="فتح القائمة">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+          <div class="admin-user-pill">
+            <span class="user-status-dot"></span>
+            <span class="user-title-text">المشرف العام (Admin)</span>
+          </div>
+        </div>
+
+        <div class="header-right-actions" style="display:flex; align-items:center; gap:10px;">
+          <button class="btn-primary-admin" id="btnDownloadDataJsHeader" style="background:linear-gradient(135deg, #10b981, #059669); border-color:#10b981; box-shadow:0 4px 12px rgba(16,185,129,0.3);" title="تنزيل ملف data.js لنشر التعديلات للجميع">
+            <i class="fa-solid fa-cloud-arrow-down"></i>
+            <span>حفظ وتنزيل data.js للنشر</span>
+          </button>
+          <a href="index.html" target="_blank" class="header-site-link" title="عرض الموقع المباشر">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+            <span>مشاهدة الموقع العام</span>
+          </a>
+        </div>
+      </header>
+
+      <!-- Content Body -->
+      <div class="admin-content-body">
+
+        <!-- ===================================================
+             Tab 1: Dashboard Overview
+             =================================================== -->
+        <section class="tab-panel active" id="tab-dashboard">
+          <div class="page-header-row">
+            <div>
+              <h1 class="page-title">لوحة الإحصائيات العامة</h1>
+              <p class="page-subtitle">مرحباً بك، ملخص كامل لخدمات وجولات ومحتوى موقع Trend Travel</p>
+            </div>
+            <button class="btn-primary-admin" onclick="document.querySelector('[data-tab=\'services\']')?.click(); document.getElementById('btnAddNewService')?.click();">
+              <i class="fa-solid fa-plus"></i>
+              <span>إضافة خدمة جديدة</span>
+            </button>
+          </div>
+
+          <!-- Stats Grid -->
+          <div class="stats-cards-grid">
+            <div class="stat-card">
+              <div>
+                <div class="stat-info-title">إجمالي الخدمات المتوفرة</div>
+                <div class="stat-info-val" id="statTotalServices">0</div>
+              </div>
+              <div class="stat-card-icon stat-icon-blue">
+                <i class="fa-solid fa-gem"></i>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div>
+                <div class="stat-info-title">جولات المجموعات</div>
+                <div class="stat-info-val" id="statGroupTours">0</div>
+              </div>
+              <div class="stat-card-icon stat-icon-gold">
+                <i class="fa-solid fa-users"></i>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div>
+                <div class="stat-info-title">جولات خاصة VIP</div>
+                <div class="stat-info-val" id="statPrivateTours">0</div>
+              </div>
+              <div class="stat-card-icon stat-icon-purple">
+                <i class="fa-solid fa-car-side"></i>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div>
+                <div class="stat-info-title">يخوت وباقات eSIM</div>
+                <div class="stat-info-val" id="statYachts">0</div>
+              </div>
+              <div class="stat-card-icon stat-icon-green">
+                <i class="fa-solid fa-ship"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Action Buttons -->
+          <div class="quick-actions-grid">
+            <div class="action-card" onclick="document.querySelector('[data-tab=\'services\']')?.click();">
+              <div class="action-card-header">
+                <div class="action-card-icon"><i class="fa-solid fa-pen-to-square"></i></div>
+                <div class="action-card-title">إدارة وتعديل الأسعار والخدمات</div>
+              </div>
+              <p class="action-card-desc">تعديل أسعار الجولات، تفاصيل البرامج، والمشمولات وتحديثها في الموقع فوراً.</p>
+            </div>
+
+            <div class="action-card" onclick="document.querySelector('[data-tab=\'settings\']')?.click();">
+              <div class="action-card-header">
+                <div class="action-card-icon"><i class="fa-brands fa-whatsapp"></i></div>
+                <div class="action-card-title">تغيير أرقام الواتساب والتواصل</div>
+              </div>
+              <p class="action-card-desc">تعديل رقم الواتساب الذي يستقبل طلبات الحجز المباشر من كافة صفحات الموقع.</p>
+            </div>
+
+            <div class="action-card" onclick="document.querySelector('[data-tab=\'backup\']')?.click();">
+              <div class="action-card-header">
+                <div class="action-card-icon"><i class="fa-solid fa-cloud-arrow-down"></i></div>
+                <div class="action-card-title">نسخ احتياطي للبيانات (JSON)</div>
+              </div>
+              <p class="action-card-desc">تصدير واستيراد قاعدة بيانات الخدمات وحفظ نسخة كاملة على جهازك.</p>
+            </div>
+          </div>
+
+          <!-- Recent Services Table Preview -->
+          <div class="admin-card-wrapper">
+            <div class="card-toolbar">
+              <h3 style="font-size:1.05rem; font-weight:800; color:#fff;">أحدث الخدمات المضافة</h3>
+              <button class="btn-secondary-admin" onclick="document.querySelector('[data-tab=\'services\']')?.click();">
+                <span>عرض الكل</span>
+                <i class="fa-solid fa-angle-left"></i>
+              </button>
+            </div>
+            <div class="admin-table-scroll">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>الخدمة / الجولة</th>
+                    <th>القسم</th>
+                    <th>السعر</th>
+                    <th>المدة</th>
+                    <th>إجراء</th>
+                  </tr>
+                </thead>
+                <tbody id="dashboardRecentServices">
+                  <!-- Rendered via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ===================================================
+             Tab: Bookings Management
+             =================================================== -->
+        <section class="tab-panel" id="tab-bookings">
+          <div class="page-header-row">
+            <div>
+              <h1 class="page-title">سجل الحجوزات الواردة أونلاين</h1>
+              <p class="page-subtitle">عرض وتتبع كافة طلبات الحجز المستلمة من الموقع مع إمكانية المراسلة الفورية عبر واتساب</p>
+            </div>
+            <button class="btn-secondary-admin" id="btnClearBookings" style="color:#f87171;">
+              <i class="fa-solid fa-trash-can"></i>
+              <span>مسح السجل</span>
+            </button>
+          </div>
+
+          <div class="admin-card-wrapper">
+            <div class="admin-table-scroll">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>رقم الحجز</th>
+                    <th>العميل</th>
+                    <th>رقم الواتساب</th>
+                    <th>الخدمة / السعر</th>
+                    <th>الفندق</th>
+                    <th>التاريخ / العدد</th>
+                    <th>الملاحظات</th>
+                    <th>تواصل</th>
+                  </tr>
+                </thead>
+                <tbody id="adminBookingsTableBody">
+                  <!-- Rendered via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ===================================================
+             Tab 2: Services & Tours Management
+             =================================================== -->
+        <section class="tab-panel" id="tab-services">
+          <div class="page-header-row">
+            <div>
+              <h1 class="page-title">إدارة الخدمات والجولات السياحية</h1>
+              <p class="page-subtitle" id="servicesCountInfo">إضافة، تعديل، حذف، وتغيير أسعار البرامج والرحلات</p>
+            </div>
+            <button class="btn-primary-admin" id="btnAddNewService">
+              <i class="fa-solid fa-plus"></i>
+              <span>إضافة خدمة جديدة</span>
+            </button>
+          </div>
+
+          <div class="admin-card-wrapper">
+            <div class="card-toolbar">
+              <div class="table-search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input 
+                  type="text" 
+                  id="serviceSearchInput" 
+                  class="table-search-input" 
+                  placeholder="ابحث بالاسم أو الوصف أو الوسم..." 
+                />
+              </div>
+
+              <select id="serviceCategoryFilter" class="table-filter-select">
+                <option value="all">جميع التصنيفات</option>
+                <option value="group-tours">جولات مجموعات</option>
+                <option value="private-tours">جولات خاصة VIP</option>
+                <option value="private-yacht">يخت خاص</option>
+                <option value="internet-sim">خطوط إنترنت eSIM</option>
+              </select>
+            </div>
+
+            <div class="admin-table-scroll">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>الخدمة / البرنامج</th>
+                    <th>التصنيف</th>
+                    <th>السعر الحالي</th>
+                    <th>مدة الرحلة</th>
+                    <th>الحالة</th>
+                    <th style="width: 140px;">خيارات</th>
+                  </tr>
+                </thead>
+                <tbody id="servicesTableBody">
+                  <!-- Injected via admin.js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ===================================================
+             Tab 3: Categories Management
+             =================================================== -->
+        <section class="tab-panel" id="tab-categories">
+          <div class="page-header-row">
+            <div>
+              <h1 class="page-title">أقسام وتصنيفات الخدمات</h1>
+              <p class="page-subtitle">نظرة عامة على الأقسام وتوزيع الخدمات السياحية</p>
+            </div>
+          </div>
+
+          <div class="quick-actions-grid" id="categoriesGridContainer">
+            <!-- Injected via admin.js -->
+          </div>
+        </section>
+
+
+        <!-- ===================================================
+             Tab 4: FAQs Management
+             =================================================== -->
+        <section class="tab-panel" id="tab-faqs">
+          <div class="page-header-row">
+            <div>
+              <h1 class="page-title">إدارة الأسئلة الأكثر شيوعاً</h1>
+              <p class="page-subtitle">إضافة وتعديل الأسئلة والإجابات المعروضة للزوار</p>
+            </div>
+            <button class="btn-primary-admin" id="btnAddNewFaq">
+              <i class="fa-solid fa-plus"></i>
+              <span>إضافة سؤال جديد</span>
+            </button>
+          </div>
+
+          <div class="faqs-manager-list" id="faqsManagerList">
+            <!-- Injected via admin.js -->
+          </div>
+        </section>
+
+
+        <!-- ===================================================
+             Tab 5: General Company Settings
+             =================================================== -->
+        <section class="tab-panel" id="tab-settings">
+          <div class="page-header-row">
+            <div>
+              <h1 class="page-title">إعدادات الموقع ومعلومات التواصل</h1>
+              <p class="page-subtitle">تعديل أرقام الواتساب والهاتف، البريد، العملة، واسم الشركة</p>
+            </div>
+          </div>
+
+          <div class="admin-form-card">
+            <form id="settingsForm">
+              <h3 style="font-size:1.1rem; font-weight:800; color:#fff; margin-bottom:20px;">
+                <i class="fa-solid fa-building" style="color:var(--admin-cyan); margin-left:6px;"></i> بيانات الشركة والشعار
+              </h3>
+
+              <div class="form-grid-2col">
+                <div class="admin-form-group">
+                  <label for="companyNameInput">اسم الشركة بالإنجليزية:</label>
+                  <input type="text" id="companyNameInput" class="admin-input" required />
+                </div>
+                <div class="admin-form-group">
+                  <label for="companyArabicNameInput">اسم الشركة بالعربية:</label>
+                  <input type="text" id="companyArabicNameInput" class="admin-input" required />
+                </div>
+              </div>
+
+              <div class="admin-form-group">
+                <label for="companySloganInput">الشعار النصي (Slogan):</label>
+                <input type="text" id="companySloganInput" class="admin-input" />
+              </div>
+
+              <hr style="border:none; border-top:1px solid var(--admin-border); margin:24px 0;" />
+
+              <h3 style="font-size:1.1rem; font-weight:800; color:#fff; margin-bottom:20px;">
+                <i class="fa-brands fa-whatsapp" style="color:var(--admin-green); margin-left:6px;"></i> قنوات التواصل والحجز
+              </h3>
+
+              <div class="form-grid-2col">
+                <div class="admin-form-group">
+                  <label for="companyWhatsappInput">رقم الواتساب المعتمد للحجوزات (بدون + وبدون مسافات):</label>
+                  <input type="text" id="companyWhatsappInput" class="admin-input" placeholder="مثال: 905550000000" required />
+                  <div class="form-help-text">جميع أزرار الحجز في الموقع ستقوم بمراسلة هذا الرقم مباشرة.</div>
+                </div>
+
+                <div class="admin-form-group">
+                  <label for="companyPhoneInput">رقم الهاتف الظاهر للعملاء:</label>
+                  <input type="text" id="companyPhoneInput" class="admin-input" placeholder="+90 555 000 0000" />
+                </div>
+              </div>
+
+              <div class="form-grid-2col">
+                <div class="admin-form-group">
+                  <label for="companyEmailInput">البريد الإلكتروني الرسمي:</label>
+                  <input type="email" id="companyEmailInput" class="admin-input" placeholder="info@trendtravel.com" />
+                </div>
+
+                <div class="admin-form-group">
+                  <label for="companyCurrencySymbol">رمز العملة:</label>
+                  <input type="text" id="companyCurrencySymbol" class="admin-input" placeholder="$" style="text-align:center; font-weight:800; font-size:1.1rem;" />
+                </div>
+              </div>
+
+              <div class="admin-form-group">
+                <label for="companyAddressInput">عنوان المقر أو المدينة:</label>
+                <input type="text" id="companyAddressInput" class="admin-input" placeholder="إسطنبول - تركيا" />
+              </div>
+
+              <div class="admin-form-group">
+                <label for="companyWebhookUrl">
+                  <i class="fa-solid fa-bolt" style="color:var(--admin-cyan); margin-left:4px;"></i> 
+                  رابط الـ Webhook للحجوزات (n8n / Google Sheets / Make):
+                </label>
+                <div style="display:flex; gap:10px; align-items:center;">
+                  <input type="url" id="companyWebhookUrl" class="admin-input" placeholder="https://your-n8n-instance.com/webhook/trend-booking" dir="ltr" style="flex:1;" />
+                  <button type="button" class="btn-secondary-admin" id="btnTestWebhook" title="إرسال حجز اختباري لفحص الـ Webhook" style="white-space:nowrap; padding:10px 16px;">
+                    <i class="fa-solid fa-paper-plane"></i>
+                    <span>فحص الرابط</span>
+                  </button>
+                </div>
+                <div class="form-help-text">يتم إرسال كافة بيانات أي حجز أونلاين تلقائياً وبصيغة JSON إلى هذا الرابط فوراً.</div>
+              </div>
+
+              <div style="margin-top:20px; display:flex; justify-content:flex-end;">
+                <button type="submit" class="btn-primary-admin" style="padding:12px 28px;">
+                  <i class="fa-solid fa-floppy-disk"></i>
+                  <span>حفظ إعدادات الموقع</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Password Change Card -->
+          <div class="admin-form-card">
+            <h3 style="font-size:1.1rem; font-weight:800; color:#fff; margin-bottom:14px;">
+              <i class="fa-solid fa-key" style="color:var(--admin-gold); margin-left:6px;"></i> تغيير كلمة مرور لوحة الإدارة
+            </h3>
+            <p style="font-size:0.84rem; color:var(--admin-text-muted); margin-bottom:20px;">
+              يمكنك تعيين كلمة مرور جديدة لحماية لوحة التحكم.
+            </p>
+
+            <form id="passwordChangeForm">
+              <div class="form-grid-2col">
+                <div class="admin-form-group">
+                  <label for="currentPasswordInput">كلمة المرور الحالية:</label>
+                  <input type="password" id="currentPasswordInput" class="admin-input" required />
+                </div>
+                <div class="admin-form-group">
+                  <label for="newPasswordInput">كلمة المرور الجديدة:</label>
+                  <input type="password" id="newPasswordInput" class="admin-input" required />
+                </div>
+              </div>
+              <div class="admin-form-group" style="max-width: 50%;">
+                <label for="confirmPasswordInput">تأكيد كلمة المرور الجديدة:</label>
+                <input type="password" id="confirmPasswordInput" class="admin-input" required />
+              </div>
+
+              <button type="submit" class="btn-secondary-admin" style="margin-top:10px;">
+                <i class="fa-solid fa-shield-halved"></i>
+                <span>تحديث كلمة المرور</span>
+              </button>
+            </form>
+          </div>
+        </section>
+
+
+        <!-- ===================================================
+             Tab 6: Backup & Factory Reset
+             =================================================== -->
+        <section class="tab-panel" id="tab-backup">
+          <div class="page-header-row">
+            <div>
+              <h1 class="page-title">النسخ الاحتياطي واستعادة البيانات</h1>
+              <p class="page-subtitle">تصدير كامل بيانات الموقع واستيرادها أو إعادة الضبط</p>
+            </div>
+          </div>
+
+          <div class="quick-actions-grid">
+            <div class="action-card" style="border-color:rgba(16,185,129,0.4); background:linear-gradient(180deg, rgba(16,185,129,0.08) 0%, rgba(15,23,42,0.6) 100%);">
+              <div class="action-card-header">
+                <div class="action-card-icon" style="background:rgba(16,185,129,0.2); color:#34d399;">
+                  <i class="fa-solid fa-cloud-arrow-down"></i>
+                </div>
+                <div class="action-card-title" style="color:#34d399;">تنزيل ملف data.js للنشر النهائي</div>
+              </div>
+              <p class="action-card-desc" style="margin-bottom:18px;">
+                يقوم بتوليد ملف <strong>data.js</strong> المحدث بكافة الصور والخدمات مباشرة. استبدله في <code>assets/js/data.js</code> وانشر الموقع!
+              </p>
+              <button class="btn-primary-admin" id="btnDownloadDataJsBackup" style="width:100%; justify-content:center; background:linear-gradient(135deg, #10b981, #059669); border-color:#10b981;">
+                <i class="fa-solid fa-file-code"></i>
+                <span>تنزيل ملف data.js الآن</span>
+              </button>
+            </div>
+
+            <div class="action-card">
+              <div class="action-card-header">
+                <div class="action-card-icon" style="background:rgba(56,189,248,0.15); color:var(--admin-cyan);">
+                  <i class="fa-solid fa-download"></i>
+                </div>
+                <div class="action-card-title">تصدير نسخة احتياطية (JSON)</div>
+              </div>
+              <p class="action-card-desc" style="margin-bottom:18px;">
+                تنزيل ملف يحتوي على كافة الخدمات والأسعار والإعدادات والأسئلة الشائعة بصيغة JSON لحفظها.
+              </p>
+              <button class="btn-secondary-admin" id="btnExportJson" style="width:100%; justify-content:center;">
+                <i class="fa-solid fa-file-export"></i>
+                <span>تنزيل ملف النسخة الاحتياطية</span>
+              </button>
+            </div>
+
+            <div class="action-card">
+              <div class="action-card-header">
+                <div class="action-card-icon" style="background:rgba(56,189,248,0.15); color:var(--admin-cyan);">
+                  <i class="fa-solid fa-upload"></i>
+                </div>
+                <div class="action-card-title">استيراد نسخة سابقة</div>
+              </div>
+              <p class="action-card-desc" style="margin-bottom:18px;">
+                رفع ملف JSON محفوظ مسبقاً لاسترجاع كافة الخدمات والبيانات بضغطة زر واحدة.
+              </p>
+              <label class="btn-secondary-admin" style="width:100%; justify-content:center; cursor:pointer;">
+                <i class="fa-solid fa-file-import"></i>
+                <span>اختر ملف JSON للاستيراد</span>
+                <input type="file" id="importFileInput" accept=".json" style="display:none;" />
+              </label>
+            </div>
+
+            <div class="action-card" style="border-color:rgba(239,68,68,0.2);">
+              <div class="action-card-header">
+                <div class="action-card-icon" style="background:rgba(239,68,68,0.15); color:#f87171;">
+                  <i class="fa-solid fa-arrows-rotate"></i>
+                </div>
+                <div class="action-card-title" style="color:#f87171;">استعادة ضبط المصنع</div>
+              </div>
+              <p class="action-card-desc" style="margin-bottom:18px;">
+                مسح التعديلات المخزنة محلياً والرجوع إلى باقة الرحلات والأسعار الأصلية الافتراضية.
+              </p>
+              <button class="btn-secondary-admin" id="btnResetToFactory" style="width:100%; justify-content:center; color:#f87171; border-color:rgba(239,68,68,0.3);">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <span>إعادة ضبط البيانات الافتراضية</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+
+  <!-- ===================================================
+       Modal: Add / Edit Service Form
+       =================================================== -->
+  <div class="admin-modal-overlay" id="adminServiceModal">
+    <div class="admin-modal-dialog">
+      <div class="admin-modal-header">
+        <h3 class="admin-modal-title" id="serviceModalTitle">إضافة / تعديل الخدمة</h3>
+        <button class="admin-modal-close" id="serviceModalClose"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="admin-modal-body">
+        <form id="serviceForm">
+          <input type="hidden" id="serviceFormId" />
+
+          <div class="form-grid-2col">
+            <div class="admin-form-group">
+              <label for="serviceFormCategory">تصنيف الخدمة / القسم:</label>
+              <select id="serviceFormCategory" class="admin-select" required>
+                <option value="group-tours">جولات مجموعات</option>
+                <option value="private-tours">جولات خاصة VIP</option>
+                <option value="private-yacht">يخت خاص بالبسفور</option>
+                <option value="internet-sim">خطوط إنترنت eSIM</option>
+              </select>
+            </div>
+
+            <div class="admin-form-group">
+              <label for="serviceFormDuration">مدة الرحلة / الجولة:</label>
+              <input type="text" id="serviceFormDuration" class="admin-input" placeholder="مثال: 10 ساعات، 3 ساعات خاصة..." required />
+            </div>
+          </div>
+
+          <div class="admin-form-group">
+            <label for="serviceFormTitle">عنوان الخدمة أو الرحلة:</label>
+            <input type="text" id="serviceFormTitle" class="admin-input" placeholder="مثال: رحلة صبنجة ومعشوقية والمطل الزجاجي" required />
+          </div>
+
+          <div class="admin-form-group">
+            <label for="serviceFormSubtitle">وصف مختصر للخدمة (يظهر أسفل العنوان):</label>
+            <input type="text" id="serviceFormSubtitle" class="admin-input" placeholder="مثال: طبيعة ساحرة وشلالات وأنشطة جبلية ممتعة..." />
+          </div>
+
+          <div class="form-grid-2col">
+            <div class="admin-form-group">
+              <label for="serviceFormPrice">السعر الحالي ($):</label>
+              <input type="number" step="0.01" id="serviceFormPrice" class="admin-input" placeholder="25" required />
+            </div>
+
+            <div class="admin-form-group">
+              <label for="serviceFormOldPrice">السعر السابق قبل الخصم (اختياري):</label>
+              <input type="number" step="0.01" id="serviceFormOldPrice" class="admin-input" placeholder="35" />
+            </div>
+          </div>
+
+          <div class="form-grid-2col">
+            <div class="admin-form-group">
+              <label for="serviceFormPriceUnit">وحدة السعر:</label>
+              <input type="text" id="serviceFormPriceUnit" class="admin-input" placeholder="للشخص، للسيارة حتى 7 أشخاص، للباقة..." required />
+            </div>
+
+            <div class="admin-form-group">
+              <label for="serviceFormFeatured" style="display:flex; align-items:center; gap:8px; margin-top:28px; cursor:pointer;">
+                <input type="checkbox" id="serviceFormFeatured" style="width:18px; height:18px; cursor:pointer;" />
+                <span>تمييز الخدمة كـ (خدمة مميزة / الأكثر طلباً)</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Multiple Booking Types & Options (Optional) -->
+          <div class="admin-booking-types-manager">
+            <div class="booking-types-manager-header">
+              <div>
+                <h4 style="font-size:0.95rem; font-weight:800; color:#fff; display:flex; align-items:center; gap:6px;">
+                  <i class="fa-solid fa-layer-group" style="color:var(--admin-cyan);"></i>
+                  <span>خيارات وباقات الحجز المتعددة (اختياري)</span>
+                </h4>
+                <p style="font-size:0.8rem; color:var(--admin-text-muted); margin:3px 0 0 0;">
+                  إذا كانت الجولة تتيح أكثر من نوع حجز (مثل: تذكرة بدون تلفريك، شامل التلفريك، باقة VIP)، يمكنك إضافتها هنا
+                </p>
+              </div>
+              <button type="button" class="btn-secondary-admin" id="btnAddBookingTypeRow" style="padding:7px 14px; font-size:0.82rem;">
+                <i class="fa-solid fa-plus"></i>
+                <span>إضافة نوع حجز</span>
+              </button>
+            </div>
+
+            <div id="bookingTypesRowsContainer" class="booking-types-rows-list">
+              <!-- Dynamically populated via admin.js -->
+            </div>
+          </div>
+
+          <!-- Multiple Media Upload & Gallery Manager (Images & Videos) -->
+          <div class="admin-form-group">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <label style="margin:0; font-weight:700; color:#fff; display:flex; align-items:center; gap:6px;">
+                <i class="fa-solid fa-photo-film" style="color:var(--admin-cyan);"></i>
+                <span>معرض وسائط الجولة (صور وفيديوهات متعددة):</span>
+              </label>
+              <span id="mediaGalleryCountBadge" style="font-size:0.75rem; color:var(--admin-cyan); background:rgba(56,189,248,0.12); padding:3px 10px; border-radius:999px; font-weight:700; border:1px solid rgba(56,189,248,0.3);">
+                0 وسائط
+              </span>
+            </div>
+            <p style="font-size:0.8rem; color:var(--admin-text-muted); margin:0 0 10px 0;">
+              يمكنك رفع صور وفيديوهات متعددة دفعة واحدة. اضغط على أي وسيط لتعيينه كغلاف رئيسي للرحلة.
+            </p>
+
+            <!-- Backwards-compatible hidden fields for primary cover -->
+            <input type="hidden" id="serviceFormImage" required />
+            <input type="hidden" id="serviceFormMediaType" value="image" />
+
+            <div class="media-upload-container">
+              <!-- Hidden Multi-File Input -->
+              <input type="file" id="serviceMediaFileInput" accept="image/*,video/*" multiple style="display:none;" />
+
+              <!-- Drag & Drop Upload Zone (supports multiple files) -->
+              <div class="media-dropzone" id="mediaDropzone">
+                <i class="fa-solid fa-cloud-arrow-up dropzone-icon"></i>
+                <div class="dropzone-text">اضغط لاختيار صورة أو عدة صور/فيديوهات، أو اسحب الملفات وأفلتها هنا</div>
+                <div class="dropzone-hint">يدعم رفع ملفات متعددة معاً (JPG, PNG, WebP) وفيديوهات العرض (MP4, WebM)</div>
+              </div>
+
+              <!-- Media Gallery Grid of Uploaded Items -->
+              <div id="mediaGalleryGrid" class="media-gallery-grid" style="display:none;">
+                <!-- Dynamically populated via admin.js -->
+              </div>
+
+              <!-- Direct URL Adder (Collapsible) -->
+              <div class="media-url-adder-box">
+                <button type="button" class="media-url-toggle-btn" id="mediaUrlToggleBtn">
+                  <i class="fa-solid fa-link"></i> <span>إضافة وسيط عبر رابط خارجي (URL)</span>
+                </button>
+
+                <div id="mediaUrlInputContainer" style="display:none; margin-top:8px;">
+                  <div style="display:flex; gap:8px; align-items:center;">
+                    <input type="url" id="serviceFormDirectUrl" class="admin-input" style="flex:1;" placeholder="https://example.com/image.jpg أو رابط فيديو .mp4" />
+                    <select id="serviceFormDirectUrlType" class="admin-select" style="width:110px;">
+                      <option value="image">صورة</option>
+                      <option value="video">فيديو</option>
+                    </select>
+                    <button type="button" id="btnAddDirectUrlMedia" class="btn-secondary-admin" style="white-space:nowrap; padding:9px 14px;">
+                      <i class="fa-solid fa-plus"></i> إضافة
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="admin-form-group">
+            <label for="serviceFormTags">الوسوم المميزة (افصل بينها بفاصلة ,):</label>
+            <input type="text" id="serviceFormTags" class="admin-input" placeholder="شامل الغداء, مرشد عربي, مواصلات فندقية" />
+          </div>
+
+          <div class="admin-form-group">
+            <label for="serviceFormHighlights">أبرز مميزات وبرنامج الرحلة (كل نقطة في سطر مستقل):</label>
+            <textarea id="serviceFormHighlights" class="admin-textarea" placeholder="زيارة بحيرة صبنجة الساحرة&#10;جولة في شلالات معشوقية&#10;صعود المطل الزجاجي"></textarea>
+          </div>
+
+          <div class="form-grid-2col">
+            <div class="admin-form-group">
+              <label for="serviceFormIncludes">السعر يشمل (كل بند في سطر):</label>
+              <textarea id="serviceFormIncludes" class="admin-textarea" placeholder="مواصلات مكيفة من وإلى الفندق&#10;مرشد سياحي مرافق&#10;وجبة غداء"></textarea>
+            </div>
+
+            <div class="admin-form-group">
+              <label for="serviceFormExcludes">السعر لا يشمل (كل بند في سطر):</label>
+              <textarea id="serviceFormExcludes" class="admin-textarea" placeholder="المصاريف الشخصية&#10;الأنشطة الاختيارية"></textarea>
+            </div>
+          </div>
+
+          <div class="admin-modal-footer">
+            <button type="button" class="btn-secondary-admin" id="serviceModalCancel">إلغاء</button>
+            <button type="submit" class="btn-primary-admin">
+              <i class="fa-solid fa-check"></i>
+              <span>حفظ الخدمة</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ===================================================
+       Modal: Add / Edit FAQ
+       =================================================== -->
+  <div class="admin-modal-overlay" id="adminFaqModal">
+    <div class="admin-modal-dialog" style="max-width: 540px;">
+      <div class="admin-modal-header">
+        <h3 class="admin-modal-title" id="faqModalTitle">إضافة / تعديل سؤال شائع</h3>
+        <button class="admin-modal-close" id="faqModalClose"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="admin-modal-body">
+        <form id="faqForm">
+          <div class="admin-form-group">
+            <label for="faqQuestionInput">نص السؤال:</label>
+            <input type="text" id="faqQuestionInput" class="admin-input" placeholder="مثال: كيف يتم تأكيد الحجز والدفع؟" required />
+          </div>
+
+          <div class="admin-form-group">
+            <label for="faqAnswerInput">نص الإجابة والتوضيح:</label>
+            <textarea id="faqAnswerInput" class="admin-textarea" style="min-height:120px;" placeholder="اكتب الإجابة المفصلة هنا..." required></textarea>
+          </div>
+
+          <div class="admin-modal-footer">
+            <button type="button" class="btn-secondary-admin" id="faqModalCancel">إلغاء</button>
+            <button type="submit" class="btn-primary-admin">
+              <i class="fa-solid fa-check"></i>
+              <span>حفظ السؤال</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ===================================================
+       Modal: Confirmation Dialog (Delete / Reset)
+       =================================================== -->
+  <div class="admin-modal-overlay" id="adminConfirmModal">
+    <div class="admin-modal-dialog" style="max-width: 460px;">
+      <div class="admin-modal-header">
+        <h3 class="admin-modal-title" id="confirmModalTitle" style="color:#f87171;">تأكيد الإجراء</h3>
+        <button class="admin-modal-close" id="confirmModalClose"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="admin-modal-body">
+        <p id="confirmModalMessage" style="font-size:0.95rem; color:var(--admin-text-main); line-height:1.6;">
+          هل أنت متأكد من تنفيذ هذا الإجراء؟
+        </p>
+      </div>
+
+      <div class="admin-modal-footer">
+        <button type="button" class="btn-secondary-admin" id="confirmModalCancel">إلغاء</button>
+        <button type="button" class="btn-primary-admin" id="confirmModalBtn" style="background:#ef4444;">
+          <i class="fa-solid fa-trash-can"></i>
+          <span>نعم، تنفيذ</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Toast Notifications Container -->
+  <div class="admin-toast-container" id="adminToastContainer"></div>
+
+  <!-- Scripts -->
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/admin.js"></script>
+</body>
+</html>

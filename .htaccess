@@ -1,0 +1,27 @@
+# Hostinger / Apache / LiteSpeed Configuration for Trend Travel
+RewriteEngine On
+
+# Force HTTPS
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Clean URL for /admin -> admin.html
+RewriteRule ^admin/?$ admin.html [L]
+
+# Security Headers
+<IfModule mod_headers.c>
+  Header set X-Frame-Options "SAMEORIGIN"
+  Header set X-XSS-Protection "1; mode=block"
+  Header set X-Content-Type-Options "nosniff"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+
+  <FilesMatch "admin\.html$">
+    Header set X-Frame-Options "DENY"
+    Header set X-Robots-Tag "noindex, nofollow, noarchive"
+    Header set Cache-Control "no-store, no-cache, must-revalidate"
+  </FilesMatch>
+</IfModule>
+
+# Disable directory browsing
+Options -Indexes
+

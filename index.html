@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Trend Travel | تريند ترافيل للخدمات السياحية والرحلات الفاخرة</title>
+  <meta name="description" content="تريند ترافيل - أفضل الخدمات السياحية: جولات مجموعات يومية، جولات خاصة بسيارات VIP، تأجير يخوت فاخرة في البسفور، وباقات شرائح الإنترنت الإلكترونية eSIM في تركيا بأفضل الأسعار." />
+  <meta name="keywords" content="سياحة تركيا, جولات خاصة, جولات مجموعات, يخت خاص, eSIM تركيا, سيارة مع سائق إسطنبول, تريند ترافيل, Trend Travel" />
+  <meta name="theme-color" content="#091a36" />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="assets/media/basiclogo.png" />
+
+  <!-- Google Fonts & Font Awesome 6 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <!-- Flatpickr Modern Datepicker -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+
+  <!-- Header / Navigation -->
+  <header class="main-header" id="mainHeader">
+    <div class="container header-container">
+      <!-- Logo & Brand Name -->
+      <a href="#" class="brand-logo-wrap" title="Trend Travel">
+        <img src="assets/media/basiclogo.png" alt="Trend Travel Logo" class="brand-logo-img" />
+        <div class="brand-text">
+          <span class="brand-name">Trend Travel</span>
+          <span class="brand-sub">سياحة وفخامة</span>
+        </div>
+      </a>
+
+      <!-- Desktop Navigation -->
+      <nav class="desktop-nav">
+        <a href="#servicesSection" class="nav-link active">الخدمات والجولات</a>
+        <a href="#vipBannerSection" class="nav-link">يخت VIP</a>
+        <a href="#esimInfoSection" class="nav-link">شرائح eSIM</a>
+        <a href="#faqSection" class="nav-link">الأسئلة الشائعة</a>
+      </nav>
+
+      <!-- Header Actions (Contact) -->
+      <div class="header-actions">
+        <a href="https://api.whatsapp.com/send?phone=905550000000&text=مرحباً تريند ترافيل، أود الاستفسار عن خدماتكم السياحية" target="_blank" class="btn-contact-top">
+          <i class="fa-brands fa-whatsapp"></i>
+          <span>تواصل معنا</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero-section" id="heroSection">
+    <div class="hero-pattern-overlay"></div>
+    <div class="hero-glow-1"></div>
+    <div class="hero-glow-2"></div>
+
+    <div class="container hero-content">
+      <div class="hero-badge">
+        <i class="fa-solid fa-sparkles"></i>
+        <span>الوجهة الأولى لتنظيم الرحلات في تركيا</span>
+      </div>
+
+      <h1 class="hero-title">
+        اكتشف روعة السفر مع <span>Trend Travel</span><br />
+        رحلات يومية، سيارات VIP، ويخوت فاخرة
+      </h1>
+
+      <p class="hero-description">
+        نوفر لك باقة شاملة من الخدمات السياحية المتكاملة: جولات مجموعات ممتعة، جولات خاصة بسيارات مرسيدس فيتو، تأجير يخوت البسفور، وشرائح إنترنت eSIM فائقة السرعة بتفعيل فوري.
+      </p>
+
+      <!-- Live Search Box -->
+      <div class="hero-search-box">
+        <div class="search-icon-wrap">
+          <i class="fa-solid fa-magnifying-glass"></i>
+        </div>
+        <input 
+          type="text" 
+          id="heroSearchInput" 
+          class="hero-search-input" 
+          placeholder="ابحث عن جولة (صبنجة، بورصة، يخت، eSIM، سيارة خاصة)..." 
+          aria-label="بحث في الخدمات السياحية"
+        />
+        <button class="btn-search-trigger" id="btnSearchTrigger">
+          <span>بحث</span>
+          <i class="fa-solid fa-arrow-left"></i>
+        </button>
+      </div>
+
+      <!-- Hero Statistics -->
+      <div class="hero-stats-bar">
+        <div class="stat-item">
+          <span class="stat-number">+15,000</span>
+          <span class="stat-label">سائح سعيد</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number">100%</span>
+          <span class="stat-label">خدمة VIP راقية</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number">24 / 7</span>
+          <span class="stat-label">دعم ومتابعة عربية</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Category Nav Sticky Pills -->
+  <div class="categories-nav-section">
+    <div class="container">
+      <div class="category-pills-scroll" id="categoryPills">
+        <!-- Generated dynamically via data.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Services Section -->
+  <main class="section-wrapper" id="servicesSection">
+    <div class="container">
+      <!-- Section Header -->
+      <div class="section-header">
+        <div class="section-tag">
+          <i class="fa-solid fa-gem"></i>
+          <span>خدماتنا المختارة</span>
+        </div>
+        <div class="section-title-wrap">
+          <div>
+            <h2 class="section-title" id="activeCategoryTitle">أبرز البرامج والخدمات السياحية</h2>
+            <p class="section-subtitle" id="activeCategoryDesc">اختر من بين تشكيلة واسعة من أفضل الخدمات السياحية الفاخرة بأفضل الأسعار</p>
+          </div>
+          <span class="results-count-badge" id="resultsCountBadge">11 خدمة متوفرة</span>
+        </div>
+      </div>
+
+      <!-- Services Cards Grid -->
+      <div class="services-grid" id="servicesGrid">
+        <!-- Rendered by JS -->
+      </div>
+
+      <!-- Special VIP Yacht & Private Banner -->
+      <section class="vip-experience-banner" id="vipBannerSection">
+        <div class="vip-banner-content">
+          <span class="vip-badge-tag">
+            <i class="fa-solid fa-crown"></i> تجربة VIP خاصة
+          </span>
+          <h3 class="vip-banner-title">هل تخطط لمناسبة خاصة أو رحلة عائلية مميزة في البسفور؟</h3>
+          <p class="vip-banner-desc">
+            استمتع بيخت فاخر خاص بك بالكامل مع كابتن وضيافة فاخرة، أو اطلب سيارة مرسيدس VIP مع سائق خاص تحت تصرفك طوال اليوم لزيارة كافة الأماكن بدون قيود.
+          </p>
+          <div class="vip-banner-actions">
+            <a href="https://api.whatsapp.com/send?phone=905550000000&text=مرحباً تريند ترافيل، أود تفاصيل وحجز يخت VIP خاص في البسفور" target="_blank" class="btn-vip-gold">
+              <i class="fa-brands fa-whatsapp"></i>
+              <span>احجز يختك الخاص الآن</span>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- Internet eSIM Info Showcase -->
+      <section class="esim-highlight-box" id="esimInfoSection">
+        <div class="esim-header-row">
+          <div class="esim-title-group">
+            <div class="esim-icon-box">
+              <i class="fa-solid fa-qrcode"></i>
+            </div>
+            <div>
+              <h3 class="esim-main-title">إنترنت فوري بدون طوابير المطار (eSIM)</h3>
+              <p style="font-size:0.85rem; color:#64748b;">ابقَ على اتصال دائم مع عائلتك فور هبوط طائرتك في تركيا</p>
+            </div>
+          </div>
+          <button class="btn-card-book" onclick="document.querySelector('[data-category=\'internet-sim\']')?.click();" style="padding: 10px 18px;">
+            <i class="fa-solid fa-wifi"></i>
+            <span>عرض باقات الإنترنت</span>
+          </button>
+        </div>
+
+        <div class="esim-steps-grid">
+          <div class="esim-step-card">
+            <div class="step-num-badge">1</div>
+            <div class="step-text-wrap">
+              <h4>اختر الباقة المناسبة</h4>
+              <p>حدد سعة البيانات التي تحتاجها (10GB, 25GB, 50GB) لمدة 30 يوماً.</p>
+            </div>
+          </div>
+          <div class="esim-step-card">
+            <div class="step-num-badge">2</div>
+            <div class="step-text-wrap">
+              <h4>استلم رمز QR فوراً</h4>
+              <p>نرسل لك كود التفعيل الرقمي فوراً على تطبيق واتساب أو الإيميل.</p>
+            </div>
+          </div>
+          <div class="esim-step-card">
+            <div class="step-num-badge">3</div>
+            <div class="step-text-wrap">
+              <h4>امسح الكود واتصل بالـ 5G</h4>
+              <p>امسح الكود بكاميرا هاتفك واستمتع بإنترنت فائق السرعة وتغطية كاملة.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- FAQs Section -->
+      <section class="section-wrapper" id="faqSection">
+        <div class="section-header" style="text-align: center; align-items: center;">
+          <div class="section-tag">
+            <i class="fa-solid fa-circle-question"></i>
+            <span>إجابات سريعة</span>
+          </div>
+          <h2 class="section-title">الأسئلة الأكثر شيوعاً</h2>
+          <p class="section-subtitle">كل ما تود معرفته عن الحجوزات والخدمات والرحلات</p>
+        </div>
+
+        <div class="faq-list" id="faqListContainer">
+          <!-- Rendered by JS -->
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="main-footer">
+    <div class="container">
+      <div class="footer-top-grid">
+        <div>
+          <div class="brand-logo-wrap" style="margin-bottom: 12px;">
+            <img src="public/basiclogo.png" alt="Trend Travel Logo" class="brand-logo-img" style="filter: brightness(0) invert(1);" />
+            <div class="brand-text">
+              <span class="brand-name" style="color:var(--color-white);">Trend Travel</span>
+              <span class="brand-sub" style="color:#38bdf8;">تريند ترافيل للسياحة</span>
+            </div>
+          </div>
+          <p class="footer-brand-desc">
+            شركتكم الرائدة في تنظيم البرامج السياحية الفاخرة، الجولات الجماعية والخاصة، تأجير اليخوت، وخدمات الاتصال في تركيا.
+          </p>
+        </div>
+
+        <div>
+          <h4 class="footer-col-title">أقسام الخدمات</h4>
+          <ul class="footer-links-list">
+            <li class="footer-link-item"><a href="#servicesSection" onclick="document.querySelector('[data-category=\'group-tours\']')?.click();"><i class="fa-solid fa-angle-left"></i> جولات مجموعات</a></li>
+            <li class="footer-link-item"><a href="#servicesSection" onclick="document.querySelector('[data-category=\'private-tours\']')?.click();"><i class="fa-solid fa-angle-left"></i> جولات خاصة VIP</a></li>
+            <li class="footer-link-item"><a href="#servicesSection" onclick="document.querySelector('[data-category=\'private-yacht\']')?.click();"><i class="fa-solid fa-angle-left"></i> يخت خاص بالبسفور</a></li>
+            <li class="footer-link-item"><a href="#servicesSection" onclick="document.querySelector('[data-category=\'internet-sim\']')?.click();"><i class="fa-solid fa-angle-left"></i> شرائح إنترنت eSIM</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="footer-col-title">روابط مهمة</h4>
+          <ul class="footer-links-list">
+            <li class="footer-link-item"><a href="#faqSection"><i class="fa-solid fa-angle-left"></i> الأسئلة الشائعة</a></li>
+            <li class="footer-link-item"><a href="https://api.whatsapp.com/send?phone=905550000000" target="_blank"><i class="fa-solid fa-angle-left"></i> الشروط وسياسة الإلغاء</a></li>
+            <li class="footer-link-item"><a href="admin.html" style="color:#38bdf8;"><i class="fa-solid fa-gauge-high"></i> لوحة تحكم الإدارة</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="footer-col-title">تواصل مباشر</h4>
+          <div class="footer-contact-item">
+            <i class="fa-solid fa-location-dot"></i>
+            <span>إسطنبول - تركيا</span>
+          </div>
+          <div class="footer-contact-item">
+            <i class="fa-brands fa-whatsapp"></i>
+            <a href="https://api.whatsapp.com/send?phone=905550000000" target="_blank" style="direction:ltr;">+90 555 000 0000</a>
+          </div>
+          <div class="footer-contact-item">
+            <i class="fa-solid fa-envelope"></i>
+            <span>info@trendtravel.com</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom-bar">
+        <span>جميع الحقوق محفوظة &copy; 2026 لشركة Trend Travel.</span>
+        <span>تصميم عصري وتجربة متوافقة مع الهواتف الذكية</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Service Detail & Quick Booking Modal Popup -->
+  <div class="modal-overlay" id="serviceModal" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-header-media" id="modalHeaderMediaContainer">
+        <img src="" alt="" id="modalHeaderImg" class="modal-header-img" />
+        <button class="modal-close-btn" id="modalCloseBtn" aria-label="إغلاق النافذة">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="modal-body-scroll" id="modalBodyContent">
+        <!-- Injected via main.js -->
+      </div>
+
+      <div class="modal-footer-action">
+        <div class="modal-price-calc" id="modalPriceDisplay">
+          <!-- Dynamic price -->
+        </div>
+        <div class="modal-footer-actions-group">
+          <button class="btn-modal-online" id="modalBtnOnline" type="button">
+            <i class="fa-solid fa-calendar-check"></i>
+            <span>تأكيد الحجز أونلاين</span>
+          </button>
+          <button class="btn-modal-whatsapp" id="modalBtnWhatsApp" type="button">
+            <i class="fa-brands fa-whatsapp" style="font-size:1.15rem;"></i>
+            <span>حجز عبر واتساب</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Bottom App-Like Navigation Bar -->
+  <nav class="mobile-bottom-nav">
+    <button class="bottom-nav-item active" data-nav-category="all" data-scroll-to="servicesSection">
+      <i class="fa-solid fa-compass"></i>
+      <span>الرئيسية</span>
+    </button>
+    <button class="bottom-nav-item" data-nav-category="group-tours" data-scroll-to="servicesSection">
+      <i class="fa-solid fa-users"></i>
+      <span>مجموعات</span>
+    </button>
+    <button class="bottom-nav-item" data-nav-category="private-tours" data-scroll-to="servicesSection">
+      <i class="fa-solid fa-car-side"></i>
+      <span>خاصة VIP</span>
+    </button>
+    <button class="bottom-nav-item" data-nav-category="private-yacht" data-scroll-to="servicesSection">
+      <i class="fa-solid fa-ship"></i>
+      <span>يخت</span>
+    </button>
+    <button class="bottom-nav-item" data-nav-category="internet-sim" data-scroll-to="servicesSection">
+      <i class="fa-solid fa-wifi"></i>
+      <span>إنترنت eSIM</span>
+    </button>
+  </nav>
+
+  <!-- Floating Glowing WhatsApp Quick Button -->
+  <a href="https://api.whatsapp.com/send?phone=905550000000&text=مرحباً تريند ترافيل، أود الاستفسار عن الرحلات والخدمات المتوفرة" target="_blank" class="floating-whatsapp-btn" title="تواصل عبر واتساب">
+    <i class="fa-brands fa-whatsapp"></i>
+  </a>
+
+  <!-- Cookie Consent Banner -->
+  <div class="cookie-consent-banner" id="cookieConsentBanner" style="display:none;" role="dialog" aria-live="polite" aria-label="إشعار ملفات تعريف الارتباط">
+    <div class="cookie-banner-inner">
+      <div class="cookie-banner-info">
+        <div class="cookie-banner-icon">
+          <i class="fa-solid fa-cookie-bite"></i>
+        </div>
+        <div class="cookie-banner-text">
+          <h4>نحن نستخدم ملفات تعريف الارتباط (Cookies) 🍪</h4>
+          <p>نستخدم ملفات تعريف الارتباط لتحسين تجربتك على موقع Trend Travel وتذكر تفضيلاتك وبيانات الحجز الخاصة بك لسرعة وسهولة الحجز.</p>
+        </div>
+      </div>
+      <div class="cookie-banner-actions">
+        <button type="button" class="btn-cookie-essential" id="btnCookieEssential">الضرورية فقط</button>
+        <button type="button" class="btn-cookie-accept" id="btnCookieAccept">
+          <i class="fa-solid fa-check"></i>
+          <span>قبول الكل</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ar.js"></script>
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+.wwebjs_cache/
+.wwebjs_auth/
+node_modules/
+.DS_Store
+Thumbs.db
+
