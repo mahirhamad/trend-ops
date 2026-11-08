@@ -682,6 +682,54 @@ const IDB_STORE = 'travel_data_store';
 
 window.__TREND_TRAVEL_CACHE__ = window.__TREND_TRAVEL_CACHE__ || null;
 
+// Clean up outdated storage keys so they never consume the 5MB localStorage quota
+function cleanupOldStorageKeys() {
+  try {
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('trend_travel_data_') && k !== STORAGE_KEY && k !== STORAGE_KEY + '_sync_ping') {
+        keysToRemove.push(k);
+      }
+    }
+    keysToRemove.forEach(k => localStorage.removeItem(k));
+  } catch (e) {}
+}
+cleanupOldStorageKeys();
+
+// Ensure every service's cover image (s.image) matches its gallery cover item
+function normalizeServicesMedia(data) {
+  if (!data || !Array.isArray(data.services)) return data;
+  data.services.forEach(s => {
+    if (Array.isArray(s.gallery) && s.gallery.length > 0) {
+      const normalized = s.gallery.map((item, idx) => {
+        if (typeof item === 'string') {
+          return { url: item, type: 'image', isCover: idx === 0 };
+        }
+        return {
+          url: item.url || '',
+          type: item.type || 'image',
+          isCover: Boolean(item.isCover)
+        };
+      }).filter(item => Boolean(item.url));
+
+      if (normalized.length > 0) {
+        let coverIdx = normalized.findIndex(m => m.isCover);
+        if (coverIdx === -1) {
+          coverIdx = 0;
+          normalized[0].isCover = true;
+        }
+        normalized.forEach((m, i) => { m.isCover = (i === coverIdx); });
+        const coverItem = normalized[coverIdx];
+        s.image = coverItem.url;
+        s.mediaType = coverItem.type || 'image';
+        s.gallery = normalized;
+      }
+    }
+  });
+  return data;
+}
+
 function openTravelIndexedDB() {
   return new Promise((resolve, reject) => {
     if (!window.indexedDB) return reject(new Error('IndexedDB not supported'));
@@ -727,39 +775,34 @@ async function loadFromIndexedDB(key) {
   }
 }
 
-function createLightweightDataForLocalStorage(data) {
-  const clone = JSON.parse(JSON.stringify(data));
-  clone._isLightweight = true;
-  if (Array.isArray(clone.services)) {
-    clone.services.forEach(s => {
-      const defService = DEFAULT_TRAVEL_DATA.services.find(d => d.id === s.id);
-      const fallbackImg = (defService && defService.image) || 'assets/media/basiclogo.png';
-      if (s.image && s.image.startsWith('data:')) {
-        const extItem = Array.isArray(s.gallery) ? s.gallery.find(g => g && g.url && !g.url.startsWith('data:')) : null;
-        s.image = extItem ? extItem.url : fallbackImg;
-      }
-      if (Array.isArray(s.gallery)) {
-        s.gallery = s.gallery.filter(g => {
-          const u = typeof g === 'string' ? g : (g && g.url);
-          return u && !u.startsWith('data:');
-        });
-      }
-    });
-  }
-  return clone;
-}
-
 async function hydrateTravelDataFromIndexedDB() {
   try {
     const idbData = await loadFromIndexedDB(STORAGE_KEY);
-    if (idbData && idbData.services && idbData.company) {
+    if (idbData && idbData.services && idbData.company && !idbData._isLightweight) {
+      normalizeServicesMedia(idbData);
       window.__TREND_TRAVEL_CACHE__ = idbData;
       travelData = idbData;
       window.dispatchEvent(new CustomEvent('travelDataReady', { detail: travelData }));
       return travelData;
     }
-    const seedData = JSON.parse(JSON.stringify(DEFAULT_TRAVEL_DATA));
-    seedData._updatedAt = Date.now();
+    // Check if localStorage has valid non-lightweight data
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && parsed.services && parsed.company && !parsed._isLightweight) {
+          normalizeServicesMedia(parsed);
+          window.__TREND_TRAVEL_CACHE__ = parsed;
+          travelData = parsed;
+          await saveToIndexedDB(STORAGE_KEY, parsed);
+          window.dispatchEvent(new CustomEvent('travelDataReady', { detail: travelData }));
+          return travelData;
+        }
+      }
+    } catch (e) {}
+
+    const seedData = normalizeServicesMedia(JSON.parse(JSON.stringify(DEFAULT_TRAVEL_DATA)));
+    seedData._updatedAt = DEFAULT_TRAVEL_DATA._updatedAt || Date.now();
     window.__TREND_TRAVEL_CACHE__ = seedData;
     travelData = seedData;
     await saveToIndexedDB(STORAGE_KEY, seedData);
@@ -771,20 +814,23 @@ async function hydrateTravelDataFromIndexedDB() {
 }
 
 function getTravelData() {
-  if (window.__TREND_TRAVEL_CACHE__ && window.__TREND_TRAVEL_CACHE__.services) {
+  if (window.__TREND_TRAVEL_CACHE__ && window.__TREND_TRAVEL_CACHE__.services && !window.__TREND_TRAVEL_CACHE__._isLightweight) {
     return window.__TREND_TRAVEL_CACHE__;
   }
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       const parsed = JSON.parse(stored);
-      if (parsed && parsed.services && parsed.categories && parsed.company) {
+      if (parsed && parsed.services && parsed.categories && parsed.company && !parsed._isLightweight) {
+        normalizeServicesMedia(parsed);
         window.__TREND_TRAVEL_CACHE__ = parsed;
         return parsed;
+      } else if (parsed && parsed._isLightweight) {
+        localStorage.removeItem(STORAGE_KEY);
       }
     }
   } catch (e) {}
-  const fallback = JSON.parse(JSON.stringify(DEFAULT_TRAVEL_DATA));
+  const fallback = normalizeServicesMedia(JSON.parse(JSON.stringify(DEFAULT_TRAVEL_DATA)));
   window.__TREND_TRAVEL_CACHE__ = fallback;
   return fallback;
 }
@@ -792,7 +838,8 @@ function getTravelData() {
 function saveTravelData(data) {
   if (!data || typeof data !== 'object') return false;
   try {
-    const cleanData = JSON.parse(JSON.stringify(data));
+    cleanupOldStorageKeys();
+    const cleanData = normalizeServicesMedia(JSON.parse(JSON.stringify(data)));
     delete cleanData._isLightweight;
     cleanData._updatedAt = Date.now();
     window.__TREND_TRAVEL_CACHE__ = cleanData;
@@ -803,10 +850,12 @@ function saveTravelData(data) {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(cleanData));
     } catch (quotaErr) {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(createLightweightDataForLocalStorage(cleanData)));
-      } catch (e) {}
+      // Never overwrite localStorage with stripped/old images; let IndexedDB serve full media
+      try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
     }
+    try {
+      localStorage.setItem(STORAGE_KEY + '_sync_ping', String(cleanData._updatedAt));
+    } catch (e) {}
     return true;
   } catch (e) {
     return false;
@@ -814,7 +863,7 @@ function saveTravelData(data) {
 }
 
 function resetTravelData() {
-  const defClone = JSON.parse(JSON.stringify(DEFAULT_TRAVEL_DATA));
+  const defClone = normalizeServicesMedia(JSON.parse(JSON.stringify(DEFAULT_TRAVEL_DATA)));
   saveTravelData(defClone);
   return defClone;
 }

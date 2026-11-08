@@ -648,7 +648,7 @@ document.addEventListener('DOMContentLoaded', () => {
     reader.readAsDataURL(file);
   }
 
-  // Helper: Check if all current gallery items are only default Unsplash placeholders
+  // Helper: Check if current cover is a default Unsplash placeholder
   function hasOnlyDefaultUnsplashCover() {
     if (currentMediaGallery.length === 0) return true;
     const cover = currentMediaGallery.find(m => m.isCover) || currentMediaGallery[0];
@@ -676,8 +676,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     showToast(`جاري معالجة ${validFiles.length} من الوسائط المحددة...`, 'info');
 
-    // If current cover is a default Unsplash placeholder, promote first uploaded custom media to cover
-    let shouldPromoteFirstUploadToCover = hasOnlyDefaultUnsplashCover();
+    // If current gallery only has the default Unsplash placeholder, remove it when uploading real media
+    if (currentMediaGallery.length === 1 && hasOnlyDefaultUnsplashCover()) {
+      currentMediaGallery = [];
+    }
+
+    // Always promote the first newly uploaded media item in this batch to be the cover image
+    // so the main website card updates immediately with the new image
+    let shouldPromoteFirstUploadToCover = true;
 
     let processedCount = 0;
     for (const file of validFiles) {
@@ -734,7 +740,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     renderMediaGallery();
     if (processedCount > 0) {
-      showToast(`تمت إضافة ${processedCount} من الوسائط بنجاح إلى الجولة`, 'success');
+      showToast(`تمت إضافة ${processedCount} من الوسائط وتعيينها كغلاف رئيسي للجولة`, 'success');
     }
   }
 
@@ -785,19 +791,19 @@ document.addEventListener('DOMContentLoaded', () => {
         showToast('يرجى إدخال رابط الوسيط أولاً', 'error');
         return;
       }
-      const chosenType = serviceFormDirectUrlType?.value || (isVideoMedia(val) ? 'video' : 'image');
-      const makeCover = currentMediaGallery.length === 0 || hasOnlyDefaultUnsplashCover();
-      if (makeCover) {
-        currentMediaGallery.forEach(m => { m.isCover = false; });
+      if (currentMediaGallery.length === 1 && hasOnlyDefaultUnsplashCover()) {
+        currentMediaGallery = [];
       }
+      const chosenType = serviceFormDirectUrlType?.value || (isVideoMedia(val) ? 'video' : 'image');
+      currentMediaGallery.forEach(m => { m.isCover = false; });
       currentMediaGallery.push({
         url: val,
         type: chosenType,
-        isCover: makeCover
+        isCover: true
       });
       serviceFormDirectUrl.value = '';
       renderMediaGallery();
-      showToast('تمت إضافة الرابط إلى معرض الوسائط بنجاح', 'success');
+      showToast('تمت إضافة الرابط وتعيينه كغلاف رئيسي للجولة بنجاح', 'success');
     });
   }
 
@@ -946,21 +952,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // If user typed a direct URL and forgot to click "+ إضافة", auto-include it
       if (serviceFormDirectUrl && serviceFormDirectUrl.value.trim() !== '') {
+        if (currentMediaGallery.length === 1 && hasOnlyDefaultUnsplashCover()) {
+          currentMediaGallery = [];
+        }
         const pendingUrl = serviceFormDirectUrl.value.trim();
         const pendingType = serviceFormDirectUrlType?.value || (isVideoMedia(pendingUrl) ? 'video' : 'image');
-        const makeCover = currentMediaGallery.length === 0 || hasOnlyDefaultUnsplashCover();
-        if (makeCover) {
-          currentMediaGallery.forEach(m => { m.isCover = false; });
-        }
+        currentMediaGallery.forEach(m => { m.isCover = false; });
         currentMediaGallery.push({
           url: pendingUrl,
           type: pendingType,
-          isCover: makeCover
+          isCover: true
         });
         serviceFormDirectUrl.value = '';
       }
 
       travelData = getTravelData();
+
+      // Place the cover item at index 0 so both card thumbnail and modal gallery start with the cover
+      if (currentMediaGallery.length > 0) {
+        let coverIdx = currentMediaGallery.findIndex(m => m.isCover);
+        if (coverIdx === -1) {
+          coverIdx = 0;
+          currentMediaGallery[0].isCover = true;
+        }
+        if (coverIdx > 0) {
+          const [coverElem] = currentMediaGallery.splice(coverIdx, 1);
+          currentMediaGallery.unshift(coverElem);
+        }
+      }
 
       const coverItem = currentMediaGallery.find(m => m.isCover) || currentMediaGallery[0];
       const fallbackImg = 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=800&q=80';
@@ -1457,6 +1476,52 @@ const IDB_STORE = 'travel_data_store';
 
 window.__TREND_TRAVEL_CACHE__ = window.__TREND_TRAVEL_CACHE__ || null;
 
+function cleanupOldStorageKeys() {
+  try {
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('trend_travel_data_') && k !== STORAGE_KEY && k !== STORAGE_KEY + '_sync_ping') {
+        keysToRemove.push(k);
+      }
+    }
+    keysToRemove.forEach(k => localStorage.removeItem(k));
+  } catch (e) {}
+}
+cleanupOldStorageKeys();
+
+function normalizeServicesMedia(data) {
+  if (!data || !Array.isArray(data.services)) return data;
+  data.services.forEach(s => {
+    if (Array.isArray(s.gallery) && s.gallery.length > 0) {
+      const normalized = s.gallery.map((item, idx) => {
+        if (typeof item === 'string') {
+          return { url: item, type: 'image', isCover: idx === 0 };
+        }
+        return {
+          url: item.url || '',
+          type: item.type || 'image',
+          isCover: Boolean(item.isCover)
+        };
+      }).filter(item => Boolean(item.url));
+
+      if (normalized.length > 0) {
+        let coverIdx = normalized.findIndex(m => m.isCover);
+        if (coverIdx === -1) {
+          coverIdx = 0;
+          normalized[0].isCover = true;
+        }
+        normalized.forEach((m, i) => { m.isCover = (i === coverIdx); });
+        const coverItem = normalized[coverIdx];
+        s.image = coverItem.url;
+        s.mediaType = coverItem.type || 'image';
+        s.gallery = normalized;
+      }
+    }
+  });
+  return data;
+}
+
 function openTravelIndexedDB() {
   return new Promise((resolve, reject) => {
     if (!window.indexedDB) return reject(new Error('IndexedDB not supported'));
@@ -1502,39 +1567,33 @@ async function loadFromIndexedDB(key) {
   }
 }
 
-function createLightweightDataForLocalStorage(data) {
-  const clone = JSON.parse(JSON.stringify(data));
-  clone._isLightweight = true;
-  if (Array.isArray(clone.services)) {
-    clone.services.forEach(s => {
-      const defService = DEFAULT_TRAVEL_DATA.services.find(d => d.id === s.id);
-      const fallbackImg = (defService && defService.image) || 'assets/media/basiclogo.png';
-      if (s.image && s.image.startsWith('data:')) {
-        const extItem = Array.isArray(s.gallery) ? s.gallery.find(g => g && g.url && !g.url.startsWith('data:')) : null;
-        s.image = extItem ? extItem.url : fallbackImg;
-      }
-      if (Array.isArray(s.gallery)) {
-        s.gallery = s.gallery.filter(g => {
-          const u = typeof g === 'string' ? g : (g && g.url);
-          return u && !u.startsWith('data:');
-        });
-      }
-    });
-  }
-  return clone;
-}
-
 async function hydrateTravelDataFromIndexedDB() {
   try {
     const idbData = await loadFromIndexedDB(STORAGE_KEY);
-    if (idbData && idbData.services && idbData.company) {
+    if (idbData && idbData.services && idbData.company && !idbData._isLightweight) {
+      normalizeServicesMedia(idbData);
       window.__TREND_TRAVEL_CACHE__ = idbData;
       travelData = idbData;
       window.dispatchEvent(new CustomEvent('travelDataReady', { detail: travelData }));
       return travelData;
     }
-    const seedData = JSON.parse(JSON.stringify(DEFAULT_TRAVEL_DATA));
-    seedData._updatedAt = Date.now();
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && parsed.services && parsed.company && !parsed._isLightweight) {
+          normalizeServicesMedia(parsed);
+          window.__TREND_TRAVEL_CACHE__ = parsed;
+          travelData = parsed;
+          await saveToIndexedDB(STORAGE_KEY, parsed);
+          window.dispatchEvent(new CustomEvent('travelDataReady', { detail: travelData }));
+          return travelData;
+        }
+      }
+    } catch (e) {}
+
+    const seedData = normalizeServicesMedia(JSON.parse(JSON.stringify(DEFAULT_TRAVEL_DATA)));
+    seedData._updatedAt = DEFAULT_TRAVEL_DATA._updatedAt || Date.now();
     window.__TREND_TRAVEL_CACHE__ = seedData;
     travelData = seedData;
     await saveToIndexedDB(STORAGE_KEY, seedData);
@@ -1546,20 +1605,23 @@ async function hydrateTravelDataFromIndexedDB() {
 }
 
 function getTravelData() {
-  if (window.__TREND_TRAVEL_CACHE__ && window.__TREND_TRAVEL_CACHE__.services) {
+  if (window.__TREND_TRAVEL_CACHE__ && window.__TREND_TRAVEL_CACHE__.services && !window.__TREND_TRAVEL_CACHE__._isLightweight) {
     return window.__TREND_TRAVEL_CACHE__;
   }
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       const parsed = JSON.parse(stored);
-      if (parsed && parsed.services && parsed.categories && parsed.company) {
+      if (parsed && parsed.services && parsed.categories && parsed.company && !parsed._isLightweight) {
+        normalizeServicesMedia(parsed);
         window.__TREND_TRAVEL_CACHE__ = parsed;
         return parsed;
+      } else if (parsed && parsed._isLightweight) {
+        localStorage.removeItem(STORAGE_KEY);
       }
     }
   } catch (e) {}
-  const fallback = JSON.parse(JSON.stringify(DEFAULT_TRAVEL_DATA));
+  const fallback = normalizeServicesMedia(JSON.parse(JSON.stringify(DEFAULT_TRAVEL_DATA)));
   window.__TREND_TRAVEL_CACHE__ = fallback;
   return fallback;
 }
@@ -1567,7 +1629,8 @@ function getTravelData() {
 function saveTravelData(data) {
   if (!data || typeof data !== 'object') return false;
   try {
-    const cleanData = JSON.parse(JSON.stringify(data));
+    cleanupOldStorageKeys();
+    const cleanData = normalizeServicesMedia(JSON.parse(JSON.stringify(data)));
     delete cleanData._isLightweight;
     cleanData._updatedAt = Date.now();
     window.__TREND_TRAVEL_CACHE__ = cleanData;
@@ -1578,10 +1641,11 @@ function saveTravelData(data) {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(cleanData));
     } catch (quotaErr) {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(createLightweightDataForLocalStorage(cleanData)));
-      } catch (e) {}
+      try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
     }
+    try {
+      localStorage.setItem(STORAGE_KEY + '_sync_ping', String(cleanData._updatedAt));
+    } catch (e) {}
     return true;
   } catch (e) {
     return false;
@@ -1589,7 +1653,7 @@ function saveTravelData(data) {
 }
 
 function resetTravelData() {
-  const defClone = JSON.parse(JSON.stringify(DEFAULT_TRAVEL_DATA));
+  const defClone = normalizeServicesMedia(JSON.parse(JSON.stringify(DEFAULT_TRAVEL_DATA)));
   saveTravelData(defClone);
   return defClone;
 }

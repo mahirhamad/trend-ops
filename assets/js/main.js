@@ -252,7 +252,12 @@ document.addEventListener('DOMContentLoaded', () => {
     servicesGrid.innerHTML = services.map(s => {
       const catObj = travelData.categories.find(c => c.id === s.category) || {};
       const highlightPreview = s.highlights && s.highlights.length > 0 ? s.highlights[0] : '';
-      const isVideo = isVideoMedia(s.image, s.mediaType);
+      const coverGalleryItem = Array.isArray(s.gallery) && s.gallery.length > 0
+        ? (s.gallery.find(g => g && g.isCover && g.url) || s.gallery[0])
+        : null;
+      const cardMediaUrl = (coverGalleryItem && (typeof coverGalleryItem === 'string' ? coverGalleryItem : coverGalleryItem.url)) || s.image;
+      const cardMediaType = (coverGalleryItem && typeof coverGalleryItem === 'object' && coverGalleryItem.type) || s.mediaType;
+      const isVideo = isVideoMedia(cardMediaUrl, cardMediaType);
       const hasMultipleTypes = s.bookingTypes && s.bookingTypes.length > 1;
       let minPrice = s.price;
       let displayUnit = s.priceUnit;
@@ -268,12 +273,12 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="service-card" data-service-id="${s.id}">
           <div class="service-card-media">
             ${isVideo ? `
-              <video src="${s.image}" class="service-card-img" autoplay muted loop playsinline></video>
+              <video src="${cardMediaUrl}" class="service-card-img" autoplay muted loop playsinline></video>
               <span style="position:absolute; top:12px; left:12px; background:rgba(15,23,42,0.85); color:#38bdf8; font-size:0.75rem; font-weight:700; padding:3px 10px; border-radius:9999px; display:flex; align-items:center; gap:5px; z-index:2; backdrop-filter:blur(4px);">
                 <i class="fa-solid fa-play"></i> فيديو
               </span>
             ` : `
-              <img src="${s.image}" alt="${s.title}" class="service-card-img" loading="lazy" />
+              <img src="${cardMediaUrl}" alt="${s.title}" class="service-card-img" loading="lazy" />
             `}
             <div class="service-card-overlay"></div>
             <span class="category-tag-floating">${catObj.name || 'سياحة'}</span>
@@ -400,13 +405,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const gallery = rawGallery.map((item) => {
       if (typeof item === 'string') {
-        return { url: item, type: isVideoMedia(item) ? 'video' : 'image' };
+        return { url: item, type: isVideoMedia(item) ? 'video' : 'image', isCover: false };
       }
       return {
         url: item.url || '',
-        type: item.type || (isVideoMedia(item.url) ? 'video' : 'image')
+        type: item.type || (isVideoMedia(item.url) ? 'video' : 'image'),
+        isCover: Boolean(item.isCover)
       };
     }).filter(item => Boolean(item.url));
+
+    const coverGalleryIdx = gallery.findIndex(item => item.isCover);
+    if (coverGalleryIdx > 0) {
+      const [coverElem] = gallery.splice(coverGalleryIdx, 1);
+      gallery.unshift(coverElem);
+    }
 
     let currentGalleryIndex = 0;
 
@@ -1235,6 +1247,19 @@ document.addEventListener('DOMContentLoaded', () => {
     renderCategories();
     renderServices();
     renderFAQs();
+  });
+
+  // Also re-sync from IndexedDB when returning to the tab or navigating back from /admin
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && typeof hydrateTravelDataFromIndexedDB === 'function') {
+      hydrateTravelDataFromIndexedDB();
+    }
+  });
+
+  window.addEventListener('pageshow', () => {
+    if (typeof hydrateTravelDataFromIndexedDB === 'function') {
+      hydrateTravelDataFromIndexedDB();
+    }
   });
 
   // ===================================================
