@@ -142,10 +142,14 @@
           </div>
         </div>
 
-        <div class="header-right-actions" style="display:flex; align-items:center; gap:10px;">
-          <button class="btn-primary-admin" id="btnDownloadDataJsHeader" style="background:linear-gradient(135deg, #10b981, #059669); border-color:#10b981; box-shadow:0 4px 12px rgba(16,185,129,0.3);" title="تنزيل ملف data.js لنشر التعديلات للجميع">
-            <i class="fa-solid fa-cloud-arrow-down"></i>
-            <span>حفظ وتنزيل data.js للنشر</span>
+        <div class="header-right-actions" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <button class="btn-primary-admin" id="btnCloudPublishHeader" style="background:linear-gradient(135deg, #0ea5e9, #2563eb); border-color:#0ea5e9; box-shadow:0 4px 14px rgba(14,165,233,0.35);" title="نشر كافة التعديلات والصور فوراً على جميع الهواتف والأجهزة">
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+            <span>نشر التعديلات لجميع الأجهزة فوراً</span>
+          </button>
+          <button class="btn-secondary-admin" id="btnDownloadDataJsHeader" style="border-color:rgba(16,185,129,0.4); color:#34d399;" title="تنزيل ملف data.js كنسخة احتياطية">
+            <i class="fa-solid fa-file-arrow-down"></i>
+            <span>تنزيل data.js</span>
           </button>
           <a href="index.html" target="_blank" class="header-site-link" title="عرض الموقع المباشر">
             <i class="fa-solid fa-arrow-up-right-from-square"></i>
@@ -529,6 +533,29 @@
               </button>
             </form>
           </div>
+
+          <!-- Cloud Sync Settings Card -->
+          <div class="admin-form-card" style="margin-top:24px; border-color:rgba(14,165,233,0.35);">
+            <h3 style="font-size:1.1rem; font-weight:800; color:#fff; margin-bottom:10px;">
+              <i class="fa-solid fa-cloud-arrow-up" style="color:var(--admin-cyan); margin-left:6px;"></i> الربط السحابي المباشر (مزامنة جميع الأجهزة تلقائياً)
+            </h3>
+            <p style="font-size:0.84rem; color:var(--admin-text-muted); margin-bottom:16px; line-height:1.6;">
+              عند تفعيل الربط السحابي مع GitHub / Vercel، فإن أي صورة أو جولة أو سعر تقوم بتعديله وحفظه هنا سيظهر <strong>تلقائياً وفوراً على جميع الهواتف والأجهزة</strong> بدون الحاجة لتنزيل أي ملفات.
+            </p>
+            <div class="admin-form-group">
+              <label for="githubTokenSettingsInput">رمز الوصول السحابي (GitHub Personal Access Token):</label>
+              <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                <input type="password" id="githubTokenSettingsInput" class="admin-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" dir="ltr" style="flex:1; min-width:240px;" />
+                <button type="button" class="btn-primary-admin" id="btnSaveGithubTokenSettings">
+                  <i class="fa-solid fa-link"></i>
+                  <span>حفظ وتفعيل الربط السحابي</span>
+                </button>
+              </div>
+              <div class="form-help-text" style="margin-top:8px;">
+                لإنشاء الرمز في 10 ثوانٍ: افتح <a href="https://github.com/settings/tokens/new?scopes=repo&description=Trend+Travel+Admin+Sync" target="_blank" style="color:#38bdf8; text-decoration:underline; font-weight:700;">هذا الرابط المباشر في GitHub</a> ثم اضغط <strong>Generate token</strong> بالأسفل وانسخ الرمز هنا.
+              </div>
+            </div>
+          </div>
         </section>
 
 
@@ -854,6 +881,45 @@
         <button type="button" class="btn-primary-admin" id="confirmModalBtn" style="background:#ef4444;">
           <i class="fa-solid fa-trash-can"></i>
           <span>نعم، تنفيذ</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ===================================================
+       Modal: Cloud Sync Setup (One-time GitHub Token Setup)
+       =================================================== -->
+  <div class="admin-modal-overlay" id="adminCloudSyncModal">
+    <div class="admin-modal-dialog" style="max-width: 540px;">
+      <div class="admin-modal-header">
+        <h3 class="admin-modal-title" style="color:#38bdf8;">
+          <i class="fa-solid fa-cloud-arrow-up"></i> تفعيل النشر السحابي المباشر لجميع الأجهزة
+        </h3>
+        <button class="admin-modal-close" id="cloudSyncModalClose"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="admin-modal-body">
+        <p style="font-size:0.9rem; color:var(--admin-text-main); line-height:1.7; margin-bottom:14px;">
+          لتتمكن من نشر الصور والتعديلات مباشرة إلى خادم الموقع وتظهر فوراً على <strong>جميع الهواتف والأجهزة</strong> بضغطة زر (تُضبط لمرة واحدة فقط):
+        </p>
+        <ol style="font-size:0.86rem; color:#cbd5e1; line-height:1.8; margin-bottom:16px; padding-right:18px;">
+          <li>اضغط هنا لفتح صفحة الرمز الجاهز: <a href="https://github.com/settings/tokens/new?scopes=repo&description=Trend+Travel+Cloud+Sync" target="_blank" style="color:#38bdf8; font-weight:800; text-decoration:underline;">إنشاء رمز GitHub بنقرة واحدة ↗</a></li>
+          <li>انزل لأسفل الصفحة واضغط الزر الأخضر <strong>Generate token</strong>.</li>
+          <li>انسخ الرمز الذي يبدأ بـ <code>ghp_</code> والصقه في الحقل أدناه:</li>
+        </ol>
+
+        <div class="admin-form-group">
+          <label for="cloudSyncTokenModalInput">رمز الربط السحابي (GitHub Token):</label>
+          <input type="password" id="cloudSyncTokenModalInput" class="admin-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" dir="ltr" />
+        </div>
+      </div>
+
+      <div class="admin-modal-footer">
+        <button type="button" class="btn-secondary-admin" id="cloudSyncModalCancel">إلغاء</button>
+        <button type="button" class="btn-primary-admin" id="btnConfirmCloudSyncToken" style="background:linear-gradient(135deg, #0ea5e9, #2563eb); border-color:#0ea5e9;">
+          <i class="fa-solid fa-cloud-arrow-up"></i>
+          <span>حفظ ونشر التعديلات الآن</span>
         </button>
       </div>
     </div>

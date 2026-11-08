@@ -1062,6 +1062,8 @@ document.addEventListener('DOMContentLoaded', () => {
             : 'تمت إضافة الخدمة الجديدة بنجاح',
           'success'
         );
+        // Auto-sync to cloud if token/endpoint is available
+        triggerAutoCloudSync();
       } else {
         showToast('حدث خطأ أثناء حفظ البيانات', 'error');
       }
@@ -1091,6 +1093,7 @@ document.addEventListener('DOMContentLoaded', () => {
     showToast('تم نسخ الخدمة بنجاح', 'success');
     renderServicesTable();
     renderDashboardStats();
+    triggerAutoCloudSync();
   };
 
   window.confirmDeleteService = function(id) {
@@ -1245,6 +1248,7 @@ document.addEventListener('DOMContentLoaded', () => {
       closeFaqModal();
       renderFaqsList();
       renderDashboardStats();
+      triggerAutoCloudSync();
     });
   }
 
@@ -1281,12 +1285,14 @@ document.addEventListener('DOMContentLoaded', () => {
         showToast('تم حذف الخدمة بنجاح', 'success');
         renderServicesTable();
         renderDashboardStats();
+        triggerAutoCloudSync();
       } else if (deleteActionTarget.type === 'faq') {
         travelData.faqs = (travelData.faqs || []).filter(f => (f.id !== deleteActionTarget.id && f.q !== deleteActionTarget.id));
         saveTravelData(travelData);
         showToast('تم حذف السؤال بنجاح', 'success');
         renderFaqsList();
         renderDashboardStats();
+        triggerAutoCloudSync();
       } else if (deleteActionTarget.type === 'reset') {
         resetTravelData();
         travelData = getTravelData();
@@ -1295,6 +1301,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderServicesTable();
         renderFaqsList();
         loadSettingsForm();
+        triggerAutoCloudSync();
       }
 
       closeConfirmModal();
@@ -1354,6 +1361,7 @@ document.addEventListener('DOMContentLoaded', () => {
       saveTravelData(travelData);
       showToast('تم حفظ إعدادات الموقع ومعلومات الـ Webhook بنجاح', 'success');
       renderDashboardStats();
+      triggerAutoCloudSync();
     });
   }
 
@@ -1448,28 +1456,30 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!travelData.company) travelData.company = {};
       travelData.company.adminPasswordHash = newHash;
       saveTravelData(travelData);
+      triggerAutoCloudSync();
 
-      showToast('تم تشفير وتحديث كلمة مرور لوحة التحكم بنجاح! تذكر تنزيل data.js لتطبيقها عند النشر', 'success');
+      showToast('تم تشفير وتحديث كلمة مرور لوحة التحكم بنجاح!', 'success');
       passwordChangeForm.reset();
     });
   }
 
   /* ===================================================
-     9. Backup, Export & Restore
+     9. Backup, Export, Restore & Direct Cloud Sync
      =================================================== */
-  async function exportDataJsFile() {
-    if (window.travelDataReadyPromise) {
-      try { await window.travelDataReadyPromise; } catch (e) {}
-    }
-    travelData = getTravelData();
-    const timestamp = Date.now();
-    const fileContent = `// data.js - قاعدة بيانات الخدمات لشركة Trend Travel
+  const GITHUB_TOKEN_STORAGE_KEY = 'trend_github_token';
+  const CLOUD_REPO_OWNER = 'mahirhamad';
+  const CLOUD_REPO_NAME = 'trend-ops';
+  const CLOUD_BRANCH = 'main';
+
+  function buildDataJsFileContent(dataToExport) {
+    const timestamp = dataToExport._updatedAt || Date.now();
+    return `// data.js - قاعدة بيانات الخدمات لشركة Trend Travel
 // تم التوليد وتحديث البيانات من لوحة التحكم: ${new Date().toLocaleString('ar-EG')}
 
-const DEFAULT_TRAVEL_DATA = ${JSON.stringify(travelData, null, 2)};
+const DEFAULT_TRAVEL_DATA = ${JSON.stringify(dataToExport, null, 2)};
 
 // Storage Key & IndexedDB Configuration (يتحدث تلقائياً مع كل تصدير لتحديث الكاش لجميع الزوار فوراً)
-const STORAGE_KEY = 'trend_travel_data_v_${timestamp}';
+const STORAGE_KEY = 'trend_travel_data_v_1794152938828';
 const IDB_NAME = 'TrendTravelDB';
 const IDB_VERSION = 1;
 const IDB_STORE = 'travel_data_store';
@@ -1567,30 +1577,74 @@ async function loadFromIndexedDB(key) {
   }
 }
 
+async function fetchLiveCloudData() {
+  const bust = Date.now();
+  const urls = [
+    \`https://raw.githubusercontent.com/mahirhamad/trend-ops/main/assets/js/live-data.json?t=\${bust}\`,
+    \`assets/js/live-data.json?t=\${bust}\`
+  ];
+  const results = await Promise.allSettled(
+    urls.map(u => fetch(u, { cache: 'no-store' }).then(r => (r.ok ? r.json() : null)))
+  );
+  let best = null;
+  for (const res of results) {
+    if (res.status === 'fulfilled' && res.value && Array.isArray(res.value.services) && res.value.company) {
+      if (!best || (res.value._updatedAt || 0) > (best._updatedAt || 0)) {
+        best = res.value;
+      }
+    }
+  }
+  return best;
+}
+
 async function hydrateTravelDataFromIndexedDB() {
   try {
-    const idbData = await loadFromIndexedDB(STORAGE_KEY);
-    if (idbData && idbData.services && idbData.company && !idbData._isLightweight) {
-      normalizeServicesMedia(idbData);
-      window.__TREND_TRAVEL_CACHE__ = idbData;
-      travelData = idbData;
+    const isAdminPage = window.location.pathname.includes('admin');
+    let localData = await loadFromIndexedDB(STORAGE_KEY);
+
+    if (!localData || !localData.services || !localData.company || localData._isLightweight) {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && parsed.services && parsed.company && !parsed._isLightweight) {
+            localData = parsed;
+          }
+        }
+      } catch (e) {}
+    }
+
+    if (localData && localData.services && localData.company) {
+      normalizeServicesMedia(localData);
+      window.__TREND_TRAVEL_CACHE__ = localData;
+      travelData = localData;
       window.dispatchEvent(new CustomEvent('travelDataReady', { detail: travelData }));
+    }
+
+    const cloudData = await fetchLiveCloudData();
+    if (cloudData && cloudData.services && cloudData.company) {
+      normalizeServicesMedia(cloudData);
+      const cloudTime = cloudData._updatedAt || 0;
+      const localTime = (localData && localData._updatedAt) || 0;
+
+      if (!localData || !isAdminPage || cloudTime >= localTime) {
+        window.__TREND_TRAVEL_CACHE__ = cloudData;
+        travelData = cloudData;
+        await saveToIndexedDB(STORAGE_KEY, cloudData);
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudData));
+        } catch (e) {
+          try { localStorage.removeItem(STORAGE_KEY); } catch (err) {}
+        }
+        window.dispatchEvent(new CustomEvent('travelDataReady', { detail: travelData }));
+        return travelData;
+      }
+    }
+
+    if (localData) {
+      await saveToIndexedDB(STORAGE_KEY, localData);
       return travelData;
     }
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed && parsed.services && parsed.company && !parsed._isLightweight) {
-          normalizeServicesMedia(parsed);
-          window.__TREND_TRAVEL_CACHE__ = parsed;
-          travelData = parsed;
-          await saveToIndexedDB(STORAGE_KEY, parsed);
-          window.dispatchEvent(new CustomEvent('travelDataReady', { detail: travelData }));
-          return travelData;
-        }
-      }
-    } catch (e) {}
 
     const seedData = normalizeServicesMedia(JSON.parse(JSON.stringify(DEFAULT_TRAVEL_DATA)));
     seedData._updatedAt = DEFAULT_TRAVEL_DATA._updatedAt || Date.now();
@@ -1661,7 +1715,14 @@ function resetTravelData() {
 let travelData = getTravelData();
 window.travelDataReadyPromise = hydrateTravelDataFromIndexedDB();
 `;
+  }
 
+  async function exportDataJsFile() {
+    if (window.travelDataReadyPromise) {
+      try { await window.travelDataReadyPromise; } catch (e) {}
+    }
+    travelData = getTravelData();
+    const fileContent = buildDataJsFileContent(travelData);
     const blob = new Blob([fileContent], { type: 'application/javascript;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -1671,7 +1732,271 @@ window.travelDataReadyPromise = hydrateTravelDataFromIndexedDB();
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    showToast('تم تنزيل ملف data.js بنجاح! ضعه في مجلد assets/js ثم ارفع الموقع', 'success');
+    showToast('تم تنزيل ملف data.js بنجاح!', 'success');
+  }
+
+  async function githubApiDirectRequest(path, token, options = {}) {
+    const res = await fetch(`https://api.github.com/repos/${CLOUD_REPO_OWNER}/${CLOUD_REPO_NAME}${path}`, {
+      ...options,
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+        'Content-Type': 'application/json',
+        ...(options.headers || {})
+      }
+    });
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`GitHub API (${res.status}): ${errText}`);
+    }
+    return res.json();
+  }
+
+  async function publishDirectViaBrowserGithubApi(token, dataToPublish) {
+    const refData = await githubApiDirectRequest(`/git/ref/heads/${CLOUD_BRANCH}`, token);
+    const latestCommitSha = refData.object.sha;
+    const commitData = await githubApiDirectRequest(`/git/commits/${latestCommitSha}`, token);
+    const baseTreeSha = commitData.tree.sha;
+
+    const treeItems = [];
+    const cleanData = JSON.parse(JSON.stringify(dataToPublish));
+    cleanData._updatedAt = Date.now();
+
+    const uploadMediaDataUrl = async (dataUrl, serviceId, index) => {
+      const match = /^data:(image|video)\/([a-zA-Z0-9+.-]+);base64,(.+)$/.exec(dataUrl);
+      if (!match) return dataUrl;
+      let ext = match[2].toLowerCase();
+      if (ext === 'jpeg') ext = 'jpg';
+      if (ext === 'quicktime') ext = 'mov';
+      const base64Content = match[3];
+      const fileName = `cloud-${serviceId}-${cleanData._updatedAt}-${index}.${ext}`;
+      const filePath = `assets/media/${fileName}`;
+
+      const blobRes = await githubApiDirectRequest('/git/blobs', token, {
+        method: 'POST',
+        body: JSON.stringify({ content: base64Content, encoding: 'base64' })
+      });
+
+      treeItems.push({
+        path: filePath,
+        mode: '100644',
+        type: 'blob',
+        sha: blobRes.sha
+      });
+
+      return `https://raw.githubusercontent.com/${CLOUD_REPO_OWNER}/${CLOUD_REPO_NAME}/${CLOUD_BRANCH}/${filePath}`;
+    };
+
+    for (const s of cleanData.services) {
+      const sid = String(s.id || 'item').replace(/[^a-zA-Z0-9_-]/g, '');
+      if (Array.isArray(s.gallery)) {
+        for (let i = 0; i < s.gallery.length; i++) {
+          const g = s.gallery[i];
+          const url = typeof g === 'string' ? g : (g && g.url);
+          if (url && url.startsWith('data:')) {
+            const cloudUrl = await uploadMediaDataUrl(url, sid, i + 1);
+            if (typeof g === 'string') {
+              s.gallery[i] = { url: cloudUrl, type: 'image', isCover: i === 0 };
+            } else {
+              s.gallery[i].url = cloudUrl;
+            }
+          }
+        }
+      }
+      if (s.image && s.image.startsWith('data:')) {
+        const coverFromGallery = Array.isArray(s.gallery)
+          ? (s.gallery.find(g => g && g.isCover && g.url && !g.url.startsWith('data:')) || s.gallery[0])
+          : null;
+        if (coverFromGallery && coverFromGallery.url && !coverFromGallery.url.startsWith('data:')) {
+          s.image = coverFromGallery.url;
+        } else {
+          s.image = await uploadMediaDataUrl(s.image, sid, 0);
+        }
+      }
+    }
+
+    const liveJsonStr = JSON.stringify(cleanData, null, 2);
+    const liveBlob = await githubApiDirectRequest('/git/blobs', token, {
+      method: 'POST',
+      body: JSON.stringify({ content: liveJsonStr, encoding: 'utf-8' })
+    });
+    treeItems.push({
+      path: 'assets/js/live-data.json',
+      mode: '100644',
+      type: 'blob',
+      sha: liveBlob.sha
+    });
+
+    const fullDataJs = buildDataJsFileContent(cleanData);
+    const dataJsBlob = await githubApiDirectRequest('/git/blobs', token, {
+      method: 'POST',
+      body: JSON.stringify({ content: fullDataJs, encoding: 'utf-8' })
+    });
+    treeItems.push({
+      path: 'assets/js/data.js',
+      mode: '100644',
+      type: 'blob',
+      sha: dataJsBlob.sha
+    });
+
+    const newTree = await githubApiDirectRequest('/git/trees', token, {
+      method: 'POST',
+      body: JSON.stringify({ base_tree: baseTreeSha, tree: treeItems })
+    });
+
+    const newCommit = await githubApiDirectRequest('/git/commits', token, {
+      method: 'POST',
+      body: JSON.stringify({
+        message: `Cloud Sync update from Admin Panel (${new Date().toISOString()})`,
+        tree: newTree.sha,
+        parents: [latestCommitSha]
+      })
+    });
+
+    await githubApiDirectRequest(`/git/refs/heads/${CLOUD_BRANCH}`, token, {
+      method: 'PATCH',
+      body: JSON.stringify({ sha: newCommit.sha, force: true })
+    });
+
+    return cleanData;
+  }
+
+  const cloudSyncModal = document.getElementById('adminCloudSyncModal');
+  const cloudSyncModalClose = document.getElementById('cloudSyncModalClose');
+  const cloudSyncModalCancel = document.getElementById('cloudSyncModalCancel');
+  const cloudSyncTokenModalInput = document.getElementById('cloudSyncTokenModalInput');
+  const btnConfirmCloudSyncToken = document.getElementById('btnConfirmCloudSyncToken');
+  const githubTokenSettingsInput = document.getElementById('githubTokenSettingsInput');
+  const btnSaveGithubTokenSettings = document.getElementById('btnSaveGithubTokenSettings');
+  const btnCloudPublishHeader = document.getElementById('btnCloudPublishHeader');
+
+  function openCloudSyncModal() {
+    if (cloudSyncTokenModalInput) {
+      cloudSyncTokenModalInput.value = localStorage.getItem(GITHUB_TOKEN_STORAGE_KEY) || '';
+    }
+    if (cloudSyncModal) cloudSyncModal.classList.add('open');
+  }
+
+  function closeCloudSyncModal() {
+    if (cloudSyncModal) cloudSyncModal.classList.remove('open');
+  }
+
+  if (cloudSyncModalClose) cloudSyncModalClose.addEventListener('click', closeCloudSyncModal);
+  if (cloudSyncModalCancel) cloudSyncModalCancel.addEventListener('click', closeCloudSyncModal);
+
+  if (githubTokenSettingsInput) {
+    githubTokenSettingsInput.value = localStorage.getItem(GITHUB_TOKEN_STORAGE_KEY) || '';
+  }
+
+  if (btnSaveGithubTokenSettings) {
+    btnSaveGithubTokenSettings.addEventListener('click', async () => {
+      const val = githubTokenSettingsInput?.value.trim() || '';
+      if (!val) {
+        showToast('يرجى لصق رمز GitHub Token أولاً', 'error');
+        return;
+      }
+      localStorage.setItem(GITHUB_TOKEN_STORAGE_KEY, val);
+      showToast('تم حفظ رمز الربط السحابي! جاري مزامنة بيانات الموقع لجميع الأجهزة...', 'info');
+      await publishDataToCloud({ promptIfMissing: false });
+    });
+  }
+
+  if (btnConfirmCloudSyncToken) {
+    btnConfirmCloudSyncToken.addEventListener('click', async () => {
+      const val = cloudSyncTokenModalInput?.value.trim() || '';
+      if (!val) {
+        showToast('يرجى لصق رمز GitHub Token في الحقل المخصص', 'error');
+        return;
+      }
+      localStorage.setItem(GITHUB_TOKEN_STORAGE_KEY, val);
+      if (githubTokenSettingsInput) githubTokenSettingsInput.value = val;
+      closeCloudSyncModal();
+      await publishDataToCloud({ promptIfMissing: true });
+    });
+  }
+
+  async function publishDataToCloud({ promptIfMissing = true } = {}) {
+    if (window.travelDataReadyPromise) {
+      try { await window.travelDataReadyPromise; } catch (e) {}
+    }
+    travelData = getTravelData();
+    const savedToken = localStorage.getItem(GITHUB_TOKEN_STORAGE_KEY) || '';
+
+    const origBtnHtml = btnCloudPublishHeader ? btnCloudPublishHeader.innerHTML : '';
+    if (btnCloudPublishHeader) {
+      btnCloudPublishHeader.disabled = true;
+      btnCloudPublishHeader.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>جاري النشر لجميع الأجهزة...</span>';
+    }
+
+    try {
+      if (savedToken) {
+        const updatedCleanData = await publishDirectViaBrowserGithubApi(savedToken, travelData);
+        saveTravelData(updatedCleanData);
+        renderServicesTable();
+        showToast('تم نشر كافة التعديلات والصور سحابياً! ستظهر الآن فوراً على جميع الهواتف والأجهزة ☁️✅', 'success');
+        return true;
+      }
+
+      // Try serverless endpoint /api/publish (in case GITHUB_TOKEN is configured in Vercel Environment Variables)
+      const apiRes = await fetch('/api/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          travelData,
+          dataJsContent: buildDataJsFileContent(travelData)
+        })
+      });
+
+      if (apiRes.ok) {
+        const resJson = await apiRes.json();
+        if (resJson && resJson.travelData) {
+          saveTravelData(resJson.travelData);
+          renderServicesTable();
+        }
+        showToast('تم نشر كافة التعديلات والصور سحابياً! ستظهر الآن فوراً على جميع الهواتف والأجهزة ☁️✅', 'success');
+        return true;
+      }
+
+      const errData = await apiRes.json().catch(() => ({}));
+      if (errData.error === 'MISSING_TOKEN' || apiRes.status === 400 || apiRes.status === 404) {
+        if (promptIfMissing) {
+          openCloudSyncModal();
+        }
+        return false;
+      }
+      throw new Error(errData.message || 'تعذر الاتصال بخادم النشر السحابي');
+    } catch (err) {
+      console.error('Cloud publish error:', err);
+      if ( err.message && (err.message.includes('401') || err.message.includes('Bad credentials')) ) {
+        localStorage.removeItem(GITHUB_TOKEN_STORAGE_KEY);
+        showToast('رمز GitHub غير صالح أو منتهي الصلاحية، يرجى إدخال رمز جديد', 'error');
+        if (promptIfMissing) openCloudSyncModal();
+      } else if (promptIfMissing && !savedToken) {
+        openCloudSyncModal();
+      } else if (promptIfMissing) {
+        showToast('حدث خطأ أثناء النشر السحابي: ' + (err.message || ''), 'error');
+      }
+      return false;
+    } finally {
+      if (btnCloudPublishHeader) {
+        btnCloudPublishHeader.disabled = false;
+        btnCloudPublishHeader.innerHTML = origBtnHtml;
+      }
+    }
+  }
+
+  function triggerAutoCloudSync() {
+    const savedToken = localStorage.getItem(GITHUB_TOKEN_STORAGE_KEY);
+    if (savedToken) {
+      publishDataToCloud({ promptIfMissing: false });
+    }
+  }
+
+  if (btnCloudPublishHeader) {
+    btnCloudPublishHeader.addEventListener('click', () => {
+      publishDataToCloud({ promptIfMissing: true });
+    });
   }
 
   const btnDownloadDataJsHeader = document.getElementById('btnDownloadDataJsHeader');

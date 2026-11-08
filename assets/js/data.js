@@ -775,31 +775,76 @@ async function loadFromIndexedDB(key) {
   }
 }
 
+async function fetchLiveCloudData() {
+  const bust = Date.now();
+  const urls = [
+    `https://raw.githubusercontent.com/mahirhamad/trend-ops/main/assets/js/live-data.json?t=${bust}`,
+    `assets/js/live-data.json?t=${bust}`
+  ];
+  const results = await Promise.allSettled(
+    urls.map(u => fetch(u, { cache: 'no-store' }).then(r => (r.ok ? r.json() : null)))
+  );
+  let best = null;
+  for (const res of results) {
+    if (res.status === 'fulfilled' && res.value && Array.isArray(res.value.services) && res.value.company) {
+      if (!best || (res.value._updatedAt || 0) > (best._updatedAt || 0)) {
+        best = res.value;
+      }
+    }
+  }
+  return best;
+}
+
 async function hydrateTravelDataFromIndexedDB() {
   try {
-    const idbData = await loadFromIndexedDB(STORAGE_KEY);
-    if (idbData && idbData.services && idbData.company && !idbData._isLightweight) {
-      normalizeServicesMedia(idbData);
-      window.__TREND_TRAVEL_CACHE__ = idbData;
-      travelData = idbData;
+    const isAdminPage = window.location.pathname.includes('admin');
+    let localData = await loadFromIndexedDB(STORAGE_KEY);
+
+    if (!localData || !localData.services || !localData.company || localData._isLightweight) {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && parsed.services && parsed.company && !parsed._isLightweight) {
+            localData = parsed;
+          }
+        }
+      } catch (e) {}
+    }
+
+    if (localData && localData.services && localData.company) {
+      normalizeServicesMedia(localData);
+      window.__TREND_TRAVEL_CACHE__ = localData;
+      travelData = localData;
       window.dispatchEvent(new CustomEvent('travelDataReady', { detail: travelData }));
+    }
+
+    // Fetch live cloud data so all phones/devices always get the latest published updates
+    const cloudData = await fetchLiveCloudData();
+    if (cloudData && cloudData.services && cloudData.company) {
+      normalizeServicesMedia(cloudData);
+      const cloudTime = cloudData._updatedAt || 0;
+      const localTime = (localData && localData._updatedAt) || 0;
+
+      // Visitors always get the latest cloud data; Admin gets cloud data if it is newer than local edits
+      if (!localData || !isAdminPage || cloudTime >= localTime) {
+        window.__TREND_TRAVEL_CACHE__ = cloudData;
+        travelData = cloudData;
+        await saveToIndexedDB(STORAGE_KEY, cloudData);
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudData));
+        } catch (e) {
+          try { localStorage.removeItem(STORAGE_KEY); } catch (err) {}
+        }
+        window.dispatchEvent(new CustomEvent('travelDataReady', { detail: travelData }));
+        return travelData;
+      }
+    }
+
+    if (localData) {
+      await saveToIndexedDB(STORAGE_KEY, localData);
       return travelData;
     }
-    // Check if localStorage has valid non-lightweight data
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed && parsed.services && parsed.company && !parsed._isLightweight) {
-          normalizeServicesMedia(parsed);
-          window.__TREND_TRAVEL_CACHE__ = parsed;
-          travelData = parsed;
-          await saveToIndexedDB(STORAGE_KEY, parsed);
-          window.dispatchEvent(new CustomEvent('travelDataReady', { detail: travelData }));
-          return travelData;
-        }
-      }
-    } catch (e) {}
 
     const seedData = normalizeServicesMedia(JSON.parse(JSON.stringify(DEFAULT_TRAVEL_DATA)));
     seedData._updatedAt = DEFAULT_TRAVEL_DATA._updatedAt || Date.now();
